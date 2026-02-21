@@ -19,7 +19,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 const appName = "Siraat - Your Spiritual Companion";
 const appDescription = "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.";
-const appUrl = "https://faith-web-remix.vercel.app";
+const appUrl = "https://siraatt.vercel.app";
 const appImage = `${appUrl}/og-image.png`;
 
 // Favicon with rounded square and moon icon (matching header logo)
