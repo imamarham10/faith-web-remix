@@ -16,9 +16,10 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
-const appName = "Siraat";
-const appDescription = "Siraat — A Bridge to your spiritual practice for prayers, Quran, dhikr, and spiritual growth.";
-const appUrl = "https://siraatapp.com";
+const appName = "Siraat - Your Spiritual Companion";
+const appDescription = "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.";
+const appUrl = "https://faith-web-remix.vercel.app";
+const appImage = `${appUrl}/og-image.png`;
 
 // Favicon with rounded square and moon icon (matching header logo)
 const faviconSvg = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%231B6B4E"/><stop offset="100%" style="stop-color:%23157347"/></linearGradient></defs><rect x="0" y="0" width="180" height="180" rx="40" fill="url(%23grad)"/><text x="90" y="115" font-size="100" text-anchor="middle" fill="white" font-family="Arial, sans-serif">☽</text></svg>`;
@@ -63,9 +64,14 @@ export const meta: Route.MetaFunction = ({ location }) => {
     { property: "og:title", content: pageTitle },
     { property: "og:description", content: appDescription },
     { property: "og:url", content: appUrl },
-    { name: "twitter:card", content: "summary" },
+    { property: "og:image", content: appImage },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
+    { property: "og:image:alt", content: "Siraat App Preview" },
+    { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: pageTitle },
     { name: "twitter:description", content: appDescription },
+    { name: "twitter:image", content: appImage },
   ];
 };
 
