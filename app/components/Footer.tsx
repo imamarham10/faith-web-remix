@@ -35,7 +35,6 @@ export default function Footer() {
 
       {/* Main footer content */}
       <div className="relative container-faith pt-16 pb-8 md:pt-20 md:pb-10">
-
         {/* Top section — Brand + CTA */}
         {!isAuthenticated && (
           <div className="mb-14 md:mb-16 text-center">
@@ -72,19 +71,21 @@ export default function Footer() {
 
         {/* Links grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
-
           {/* Brand column */}
           <div className="md:col-span-5 lg:col-span-4">
-            <Link to="/" className="inline-flex items-center gap-2.5 mb-5 group">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2.5 mb-5 group"
+            >
               <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center group-hover:border-gold/30 transition-colors duration-300">
                 <span className="text-white text-lg">&#9789;</span>
               </div>
               <div>
                 <span className="text-lg font-bold tracking-tight text-white">
-                  Faith
+                  Siraat
                 </span>
                 <span className="text-lg font-light tracking-tight text-gold ml-0.5">
-                  App
+                  - A Bridge
                 </span>
               </div>
             </Link>
@@ -172,8 +173,7 @@ export default function Footer() {
         <div className="mt-14 pt-6 border-t border-white/[0.06]">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-[0.6875rem] text-white/25 tracking-wide">
-              &copy; {new Date().getFullYear()} Unified Faith Service. All
-              rights reserved.
+              &copy; {new Date().getFullYear()} All rights reserved.
             </p>
             <p className="text-[0.6875rem] text-white/25 tracking-wide flex items-center gap-1.5">
               Made with{" "}

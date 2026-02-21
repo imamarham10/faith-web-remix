@@ -7,7 +7,7 @@ import type { Emotion } from "~/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Understand Your Feelings - FaithApp" },
+    { title: "Understand Your Feelings - Siraat" },
     {
       name: "description",
       content: "Find Islamic guidance and remedies for your emotional state.",

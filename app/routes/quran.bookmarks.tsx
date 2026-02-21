@@ -8,7 +8,7 @@ import type { Bookmark as BookmarkType } from "~/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "My Bookmarks - FaithApp" },
+    { title: "My Bookmarks - Siraat" },
     { name: "description", content: "Your saved Quran verses." },
   ];
 }

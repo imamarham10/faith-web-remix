@@ -14,7 +14,7 @@ import type { Dua } from "~/types";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
-    { title: "Dua - FaithApp" },
+    { title: "Dua - Siraat" },
     {
       name: "description",
       content: "Read and reflect on this beautiful supplication from the Sunnah.",

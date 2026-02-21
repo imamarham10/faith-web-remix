@@ -6,7 +6,7 @@ import { useAuth } from "~/contexts/AuthContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "99 Names of the Prophet ﷺ - FaithApp" },
+    { title: "99 Names of the Prophet ﷺ - Siraat" },
     {
       name: "description",
       content:

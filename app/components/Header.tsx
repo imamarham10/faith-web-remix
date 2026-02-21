@@ -49,11 +49,15 @@ export default function Header() {
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileOpen]);
 
   const isActive = (path: string) =>
-    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+    path === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(path);
 
   return (
     <>
@@ -73,10 +77,10 @@ export default function Header() {
               </div>
               <div>
                 <span className="text-lg font-bold tracking-tight text-text">
-                  Faith
+                  Siraat
                 </span>
                 <span className="text-lg font-light tracking-tight text-primary ml-0.5">
-                  App
+                  - A Bridge
                 </span>
               </div>
             </Link>
@@ -113,7 +117,9 @@ export default function Header() {
                   >
                     <div className="w-8 h-8 rounded-full bg-hero-gradient flex items-center justify-center">
                       <span className="text-white text-xs font-semibold">
-                        {(user.name || user.email || "U").charAt(0).toUpperCase()}
+                        {(user.name || user.email || "U")
+                          .charAt(0)
+                          .toUpperCase()}
                       </span>
                     </div>
                     <ChevronDown
@@ -148,7 +154,10 @@ export default function Header() {
                           Settings
                         </Link>
                         <button
-                          onClick={() => { logout(); setUserMenuOpen(false); }}
+                          onClick={() => {
+                            logout();
+                            setUserMenuOpen(false);
+                          }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/5 transition-colors"
                         >
                           <LogOut size={15} />
@@ -192,7 +201,7 @@ export default function Header() {
               <div className="w-9 h-9 rounded-xl bg-hero-gradient flex items-center justify-center">
                 <span className="text-white text-lg">&#9789;</span>
               </div>
-              <span className="text-lg font-bold text-text">FaithApp</span>
+              <span className="text-lg font-bold text-text">Siraat</span>
             </div>
             <button
               onClick={() => setMobileOpen(false)}
@@ -234,11 +243,16 @@ export default function Header() {
                     <p className="text-sm font-semibold truncate">
                       {user.name || user.fullName}
                     </p>
-                    <p className="text-xs text-text-muted truncate">{user.email}</p>
+                    <p className="text-xs text-text-muted truncate">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => { logout(); setMobileOpen(false); }}
+                  onClick={() => {
+                    logout();
+                    setMobileOpen(false);
+                  }}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-error hover:bg-error/5 w-full transition-colors mt-1"
                 >
                   <LogOut size={18} />

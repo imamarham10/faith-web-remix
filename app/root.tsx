@@ -16,9 +16,9 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
-const appName = "Faith";
-const appDescription = "A comprehensive Islamic companion app for prayers, Quran, dhikr, and spiritual growth.";
-const appUrl = "https://faith-app.com";
+const appName = "Siraat";
+const appDescription = "Siraat — A Bridge to your spiritual practice for prayers, Quran, dhikr, and spiritual growth.";
+const appUrl = "https://siraatapp.com";
 
 // Favicon with rounded square and moon icon (matching header logo)
 const faviconSvg = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%231B6B4E"/><stop offset="100%" style="stop-color:%23157347"/></linearGradient></defs><rect x="0" y="0" width="180" height="180" rx="40" fill="url(%23grad)"/><text x="90" y="115" font-size="100" text-anchor="middle" fill="white" font-family="Arial, sans-serif">☽</text></svg>`;
@@ -39,15 +39,15 @@ export const meta: Route.MetaFunction = ({ location }) => {
   const pathname = location.pathname;
   let pageTitle = appName;
 
-  if (pathname.startsWith("/prayers")) pageTitle = "Faith | Prayers";
-  else if (pathname.startsWith("/quran")) pageTitle = "Faith | Quran";
-  else if (pathname.startsWith("/dhikr")) pageTitle = "Faith | Dhikr";
-  else if (pathname.startsWith("/calendar")) pageTitle = "Faith | Calendar";
-  else if (pathname.startsWith("/qibla")) pageTitle = "Faith | Qibla";
-  else if (pathname.startsWith("/names")) pageTitle = "Faith | Names";
-  else if (pathname.startsWith("/feelings")) pageTitle = "Faith | Feelings";
-  else if (pathname.startsWith("/auth")) pageTitle = "Faith | Auth";
-  else pageTitle = "Faith | Home";
+  if (pathname.startsWith("/prayers")) pageTitle = "Siraat | Prayers";
+  else if (pathname.startsWith("/quran")) pageTitle = "Siraat | Quran";
+  else if (pathname.startsWith("/dhikr")) pageTitle = "Siraat | Dhikr";
+  else if (pathname.startsWith("/calendar")) pageTitle = "Siraat | Calendar";
+  else if (pathname.startsWith("/qibla")) pageTitle = "Siraat | Qibla";
+  else if (pathname.startsWith("/names")) pageTitle = "Siraat | Names";
+  else if (pathname.startsWith("/feelings")) pageTitle = "Siraat | Feelings";
+  else if (pathname.startsWith("/auth")) pageTitle = "Siraat | Auth";
+  else pageTitle = "Siraat | Home";
 
   return [
     { title: pageTitle },

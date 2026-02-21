@@ -8,7 +8,7 @@ import type { EmotionDetail, Remedy } from "~/types";
 export function meta({ params }: Route.MetaArgs) {
   const emotionName = params.slug ? params.slug.charAt(0).toUpperCase() + params.slug.slice(1) : "Feeling"; 
   return [
-    { title: `${emotionName} - Islamic Remedies - FaithApp` },
+    { title: `${emotionName} - Islamic Remedies - Siraat` },
     {
       name: "description",
       content: `Islamic guidance, duas, and verses for when you are feeling ${emotionName}.`,

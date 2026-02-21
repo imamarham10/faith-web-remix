@@ -7,8 +7,8 @@ import { useAuth } from "~/contexts/AuthContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Settings - FaithApp" },
-    { name: "description", content: "Manage your Faith App preferences and notification settings." },
+    { title: "Settings - Siraat" },
+    { name: "description", content: "Manage your Siraat preferences and notification settings." },
   ];
 }
 
@@ -188,7 +188,7 @@ export default function SettingsPage() {
           <div className="animate-fade-in-up">
             <Settings size={28} className="text-white/70 mb-4" />
             <h1 className="text-3xl sm:text-4xl font-bold font-playfair mb-2">Settings</h1>
-            <p className="text-white/60 text-sm">Manage your Faith App preferences</p>
+            <p className="text-white/60 text-sm">Manage your Siraat preferences</p>
           </div>
         </div>
       </section>

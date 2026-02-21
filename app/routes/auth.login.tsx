@@ -86,9 +86,9 @@ export default function LoginPage() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm border border-white/10">
-              <span className="text-white text-xl font-bold">F</span>
+              <span className="text-white text-xl font-bold">S</span>
             </div>
-            <span className="text-white text-lg font-bold">FaithApp</span>
+            <span className="text-white text-lg font-bold">Siraat</span>
           </Link>
 
           {/* Main Message */}
@@ -133,9 +133,9 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <Link to="/" className="lg:hidden flex items-center gap-2.5 mb-10">
             <div className="w-9 h-9 rounded-xl bg-hero-gradient flex items-center justify-center">
-              <span className="text-white text-base font-bold">F</span>
+              <span className="text-white text-base font-bold">S</span>
             </div>
-            <span className="text-lg font-bold text-text">FaithApp</span>
+            <span className="text-lg font-bold text-text">Siraat</span>
           </Link>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-text font-playfair mb-1.5">

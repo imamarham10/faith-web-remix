@@ -23,7 +23,7 @@ import { useAuth } from "~/contexts/AuthContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "FaithApp - Your Spiritual Companion" },
+    { title: "Siraat - Your Spiritual Companion" },
     {
       name: "description",
       content:
