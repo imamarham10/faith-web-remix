@@ -227,35 +227,6 @@ export default function PrayersPage() {
         const apiData = res.data?.data || res.data;
         const normalized = normalizePrayerTimes(apiData);
 
-        // Check if we're past Isha — if so, fetch tomorrow's times
-        if (isUserSelectingToday && normalized.Isha) {
-          const now = new Date();
-          const [h, m] = normalized.Isha.split(":").map(Number);
-          const ishaTime = new Date();
-          ishaTime.setHours(h, m, 0, 0);
-
-          if (now > ishaTime) {
-            setIsPastIsha(true);
-            const nextDay = new Date(selectedDate);
-            nextDay.setDate(nextDay.getDate() + 1);
-            const nextDateStr = format(nextDay, "yyyy-MM-dd");
-
-            prayerAPI
-              .getTimes(location.lat, location.lng, nextDateStr)
-              .then((nextRes) => {
-                const nextApiData = nextRes.data?.data || nextRes.data;
-                setTimings(normalizePrayerTimes(nextApiData));
-                setDisplayedDate(nextDay);
-              })
-              .catch(() => {
-                setTimings(normalized);
-                setDisplayedDate(selectedDate);
-              })
-              .finally(() => setLoading(false));
-            return;
-          }
-        }
-
         setIsPastIsha(false);
         setTimings(normalized);
         setDisplayedDate(selectedDate);
@@ -649,10 +620,17 @@ export default function PrayersPage() {
                 const timeHHMM = timings[name];
                 const meta = PRAYER_META[name];
                 const Icon = meta.icon;
-                const isNext = name === nextPrayer && isToday;
+                const isNext = (() => {
+                  if (name !== nextPrayer || !isToday) return false;
+                  // If next prayer is Fajr but it's currently PM (after Isha), 
+                  // don't show "Next" on today's Fajr card.
+                  if (name === "Fajr" && new Date().getHours() >= 12) return false;
+                  return true;
+                })();
                 const isLogged = loggedPrayerMap.has(name);
                 const isPassed = (() => {
                   if (!timeHHMM || !isToday) return false;
+                  if (name === "Isha") return false; // Isha remains active until midnight
                   const [h, m] = timeHHMM.split(":").map(Number);
                   const now = new Date();
                   const t = new Date();
