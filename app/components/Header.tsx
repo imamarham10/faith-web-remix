@@ -9,22 +9,23 @@ import {
   ChevronDown,
   Moon,
   BookOpen,
+  BookMarked,
   Clock,
   Calendar,
   Compass,
   Heart,
-  Sparkles,
   Smile,
+  Settings,
 } from "lucide-react";
 
 const navLinks = [
   { to: "/", label: "Home", icon: Heart },
   { to: "/prayers", label: "Prayers", icon: Clock },
   { to: "/quran", label: "Quran", icon: BookOpen },
+  { to: "/duas", label: "Duas", icon: BookMarked },
   { to: "/dhikr", label: "Dhikr", icon: Moon },
   { to: "/calendar", label: "Calendar", icon: Calendar },
   { to: "/qibla", label: "Qibla", icon: Compass },
-  { to: "/names", label: "Names", icon: Sparkles },
   { to: "/feelings", label: "Feelings", icon: Smile },
 ];
 
@@ -138,6 +139,14 @@ export default function Header() {
                             {user.email}
                           </p>
                         </div>
+                        <Link
+                          to="/settings"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:bg-black/[0.03] transition-colors"
+                        >
+                          <Settings size={15} />
+                          Settings
+                        </Link>
                         <button
                           onClick={() => { logout(); setUserMenuOpen(false); }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/5 transition-colors"

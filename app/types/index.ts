@@ -118,6 +118,11 @@ export interface DhikrGoal {
   startDate: string;
   endDate: string;
   createdAt?: string;
+  // Server-computed progress fields
+  currentCount?: number;
+  progressPercent?: number;
+  daysRemaining?: number;
+  isComplete?: boolean;
 }
 
 export interface DhikrStats {
@@ -183,4 +188,55 @@ export interface DhikrPhrase {
   transliteration: string;
   english: string;
   category: string;
+}
+
+export interface Dua {
+  id: string;
+  categoryId: string;
+  titleArabic: string;
+  titleEnglish: string;
+  textArabic: string;
+  textTranslit?: string;
+  textEnglish: string;
+  reference?: string;
+  audioUrl?: string;
+  category?: DuaCategory;
+}
+
+export interface DuaCategory {
+  id: string;
+  name: string;
+  nameArabic?: string;
+  description?: string;
+  duas?: Dua[];
+}
+
+export interface MuhammadName {
+  id: number;
+  nameArabic: string;
+  nameTranslit: string;
+  nameEnglish: string;
+  meaning: string;
+  description?: string | null;
+  audioUrl?: string | null;
+}
+
+export interface UserPreference {
+  id: string;
+  userId: string;
+  faith?: string;
+  language?: string;
+  countryCode?: string;
+  timezone?: string;
+  notificationPreferences?: {
+    push?: boolean;
+    email?: boolean;
+    sms?: boolean;
+    dailyPacket?: boolean;
+    aiGuru?: boolean;
+  };
+  contentPreferences?: {
+    audioQuality?: 'standard' | 'high' | 'premium';
+    downloadQuality?: 'standard' | 'high';
+  };
 }

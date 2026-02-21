@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import {
   ArrowLeft,
   Bookmark,
+  BookmarkCheck,
   BookOpen,
   Loader2,
   ChevronLeft,
@@ -21,6 +22,10 @@ export default function SurahDetailPage() {
   const [verses, setVerses] = useState<Verse[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedVerse, setCopiedVerse] = useState<number | null>(null);
+  const [bookmarkedVerse, setBookmarkedVerse] = useState<number | null>(null);
+  const [showBookmarkToast, setShowBookmarkToast] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
 
   useEffect(() => {
     if (!surahId) return;
@@ -62,6 +67,27 @@ export default function SurahDetailPage() {
       .finally(() => setLoading(false));
   }, [surahId]);
 
+  // Scroll to and highlight a specific verse when ?verse=N is in the URL
+  useEffect(() => {
+    const verseParam = searchParams.get('verse');
+    if (!verseParam || verses.length === 0) return;
+    const verseNum = parseInt(verseParam, 10);
+    if (isNaN(verseNum)) return;
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`verse-${verseNum}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedVerse(verseNum);
+        // Remove highlight after 30 seconds
+        setTimeout(() => setHighlightedVerse(null), 30000);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [verses, searchParams]);
+
   const handleCopy = async (verse: Verse) => {
     const text = `${verse.textArabic}\n${verse.textTranslation}\n— Surah ${surah?.nameTransliteration}, ${verse.verseNumber}`;
     try {
@@ -73,8 +99,15 @@ export default function SurahDetailPage() {
 
   const handleBookmark = async (verse: Verse) => {
     if (!user) return;
+    const verseNum = verse.verseNumber || verse.id;
     try {
-      await quranAPI.addBookmark(Number(surahId), verse.verseNumber || 1);
+      await quranAPI.addBookmark(Number(surahId), verseNum);
+      // Show inline icon feedback
+      setBookmarkedVerse(verseNum);
+      setTimeout(() => setBookmarkedVerse(null), 2500);
+      // Show toast
+      setShowBookmarkToast(true);
+      setTimeout(() => setShowBookmarkToast(false), 2500);
     } catch {}
   };
 
@@ -83,6 +116,18 @@ export default function SurahDetailPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      {/* Bookmark toast */}
+      <div
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 bg-text text-white rounded-xl shadow-lg text-sm font-medium transition-all duration-300 ${
+          showBookmarkToast
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-2 pointer-events-none'
+        }`}
+      >
+        <BookmarkCheck size={16} className="text-primary shrink-0" />
+        Verse saved to bookmarks
+      </div>
+
       {/* Hero */}
       <section className="bg-hero-warm text-white pattern-islamic">
         <div className="container-faith py-8 md:py-12">
@@ -152,9 +197,18 @@ export default function SurahDetailPage() {
                 const arabicText = verse.textArabic || "";
                 const translation = verse.textTranslation || "";
                 const isCopied = copiedVerse === verseNum;
+                const isBookmarked = bookmarkedVerse === verseNum;
 
                 return (
-                  <div key={verseNum} className="card p-5 sm:p-6">
+                  <div
+                    key={verseNum}
+                    id={`verse-${verseNum}`}
+                    className={`card p-5 sm:p-6 transition-all duration-500 ${
+                      highlightedVerse === verseNum
+                        ? 'ring-2 ring-primary ring-offset-2 bg-primary/5'
+                        : ''
+                    }`}
+                  >
                     {/* Verse Number + Actions */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center">
@@ -171,10 +225,13 @@ export default function SurahDetailPage() {
                         {user && (
                           <button
                             onClick={() => handleBookmark(verse)}
-                            className="p-2 rounded-lg hover:bg-black/3 text-text-muted hover:text-primary transition-colors"
-                            title="Bookmark"
+                            className="p-2 rounded-lg hover:bg-black/3 transition-colors"
+                            title={isBookmarked ? "Bookmarked!" : "Bookmark this verse"}
                           >
-                            <Bookmark size={15} />
+                            {isBookmarked
+                              ? <BookmarkCheck size={15} className="text-primary" />
+                              : <Bookmark size={15} className="text-text-muted hover:text-primary" />
+                            }
                           </button>
                         )}
                       </div>

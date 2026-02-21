@@ -110,8 +110,8 @@ export const authAPI = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
   
-  register: (email: string, password: string, fullName: string) =>
-    api.post('/auth/register', { email, password, fullName }),
+  register: (email: string, password: string, firstName: string, lastName: string, phone: string) =>
+    api.post('/auth/register', { email, password, firstName, lastName, phone }),
   
   requestOTP: (email: string) =>
     api.post('/auth/login/request-otp', { email }),
@@ -130,27 +130,27 @@ export const authAPI = {
 };
 
 export const calendarAPI = {
-  getToday: (timezone?: string) =>
-    api.get('/api/v1/islam/calendar/today', { params: { timezone } }),
-  
-  convertToHijri: (date: string, timezone?: string) =>
-    api.get('/api/v1/islam/calendar/convert/to-hijri', { params: { date, timezone } }),
-  
+  getToday: (timezone?: string, calendarAdjust: number = 0) =>
+    api.get('/api/v1/islam/calendar/today', { params: { timezone, calendarAdjust } }),
+
+  convertToHijri: (date: string, timezone?: string, calendarAdjust: number = 0) =>
+    api.get('/api/v1/islam/calendar/convert/to-hijri', { params: { date, timezone, calendarAdjust } }),
+
   convertToGregorian: (year: number, month: number, day: number, timezone?: string) =>
     api.get('/api/v1/islam/calendar/convert/to-gregorian', { params: { year, month, day, timezone } }),
-  
-  getGregorianMonth: (year: number, month: number, timezone?: string) =>
-    api.get('/api/v1/islam/calendar/gregorian-month', { params: { year, month, timezone } }),
-  
+
+  getGregorianMonth: (year: number, month: number, timezone?: string, calendarAdjust: number = 0) =>
+    api.get('/api/v1/islam/calendar/gregorian-month', { params: { year, month, timezone, calendarAdjust } }),
+
   getHijriMonth: (year: number, month: number, timezone?: string) =>
     api.get('/api/v1/islam/calendar/hijri-month', { params: { year, month, timezone } }),
-  
+
   getEvents: () =>
     api.get('/api/v1/islam/calendar/events'),
-  
-  getUpcomingEvents: (days: number = 90, timezone?: string) =>
-    api.get('/api/v1/islam/calendar/events/upcoming', { params: { days, timezone } }),
-  
+
+  getUpcomingEvents: (days: number = 90, timezone?: string, calendarAdjust: number = 0) =>
+    api.get('/api/v1/islam/calendar/events/upcoming', { params: { days, timezone, calendarAdjust } }),
+
   getMonths: () =>
     api.get('/api/v1/islam/calendar/months'),
 };
@@ -165,11 +165,14 @@ export const prayerAPI = {
   logPrayer: (prayerName: string, date: string, status: 'on_time' | 'late' | 'qada') =>
     api.post('/api/v1/islam/prayers/log', { prayerName, date, status }),
   
-  getLogs: (startDate?: string, endDate?: string) =>
-    api.get('/api/v1/islam/prayers/logs', { params: { startDate, endDate } }),
-  
+  getLogs: (fromDate?: string, toDate?: string) =>
+    api.get('/api/v1/islam/prayers/logs', { params: { fromDate, toDate } }),
+
   getStats: () =>
     api.get('/api/v1/islam/prayers/stats'),
+
+  deleteLog: (id: string) =>
+    api.delete(`/api/v1/islam/prayers/log/${id}`),
 };
 
 export const quranAPI = {
@@ -187,6 +190,9 @@ export const quranAPI = {
   
   getBookmarks: () =>
     api.get('/api/v1/islam/quran/bookmarks'),
+
+  deleteBookmark: (id: string) =>
+    api.delete(`/api/v1/islam/quran/bookmarks/${id}`),
 };
 
 export const dhikrAPI = {
@@ -246,4 +252,49 @@ export const feelingsAPI = {
 
   getEmotionDetails: (emotion: string) =>
     api.get(`/api/v1/islam/feelings/${emotion}`),
+};
+
+export const duasAPI = {
+  getAll: (categoryId?: string) =>
+    api.get('/api/v1/islam/duas', { params: { categoryId } }),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/islam/duas/${id}`),
+
+  getCategories: () =>
+    api.get('/api/v1/islam/duas/categories'),
+
+  search: (q: string) =>
+    api.get('/api/v1/islam/duas/search', { params: { q } }),
+
+  addFavorite: (duaId: string) =>
+    api.post('/api/v1/islam/duas/favorites', { duaId }),
+
+  getFavorites: () =>
+    api.get('/api/v1/islam/duas/favorites'),
+
+  getDailyDua: () =>
+    api.get('/api/v1/islam/duas/daily'),
+};
+
+export const muhammadNamesAPI = {
+  getAllNames: () =>
+    api.get('/api/v1/islam/names/muhammad'),
+
+  getDailyName: () =>
+    api.get('/api/v1/islam/names/muhammad/daily'),
+
+  addFavorite: (nameId: number) =>
+    api.post('/api/v1/islam/names/muhammad/favorites', { nameId }),
+
+  getFavorites: () =>
+    api.get('/api/v1/islam/names/muhammad/favorites/list'),
+};
+
+export const userPreferencesAPI = {
+  getPreferences: () =>
+    api.get('/users/preferences'),
+
+  updatePreferences: (data: Record<string, unknown>) =>
+    api.put('/users/preferences', data),
 };

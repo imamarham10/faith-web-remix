@@ -349,7 +349,6 @@ export default function DhikrPage() {
           </div>
         </div>
       </section>
-      {/* Stats Bar
       <section className="container-faith -mt-6 relative z-10 mb-8">
         <div className="card-elevated p-4 sm:p-5">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -379,7 +378,7 @@ export default function DhikrPage() {
             />
           </div>
         </div>
-      </section> */}
+      </section>
       <div className="container-faith pb-12 max-w-5xl mx-auto">
         {loading ? (
           <div className="flex flex-col items-center py-20">
@@ -481,11 +480,9 @@ export default function DhikrPage() {
 
             {/* Tabbed Section */}
             <div className="flex items-center gap-1 bg-bg rounded-xl p-1 mb-6">
-              {(['goals'] as const).map(tab => {
-                // const icons = { goals: Target, stats: BarChart3, history: History };
-                // const labels = { goals: 'Goals', stats: 'Statistics', history: 'History' };
-                const icons = { goals: Target };
-                const labels = { goals: 'Goals' };
+              {(['goals', 'stats', 'history'] as const).map(tab => {
+                const icons = { goals: Target, stats: BarChart3, history: History };
+                const labels = { goals: 'Goals', stats: 'Statistics', history: 'History' };
                 const Icon = icons[tab];
                 return (
                   <button
@@ -673,37 +670,82 @@ function GoalsTab({ goals, onCreateGoal }: { goals: DhikrGoal[]; onCreateGoal: (
   const periodBadge: Record<string, string> = {
     daily: 'badge badge-primary',
     weekly: 'badge badge-gold',
-    monthly: 'badge-success badge',
+    monthly: 'badge badge-success',
+  };
+
+  const periodLabel: Record<string, string> = {
+    daily: 'today',
+    weekly: 'this week',
+    monthly: 'this month',
   };
 
   return (
     <div>
       <div className="space-y-3 mb-6">
-        {goals.map(goal => (
-          <div key={goal.id} className="card-elevated p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                {goal.phraseArabic && (
-                  <p className="font-amiri text-lg text-text mb-0.5" dir="rtl">
-                    {goal.phraseArabic}
+        {goals.map(goal => {
+          const current = goal.currentCount ?? 0;
+          const percent = goal.progressPercent ?? Math.min(Math.round((current / goal.targetCount) * 100), 100);
+          const done = goal.isComplete ?? current >= goal.targetCount;
+          const daysLeft = goal.daysRemaining;
+
+          return (
+            <div key={goal.id} className={`card-elevated p-5 transition-all ${done ? 'ring-1 ring-success/30' : ''}`}>
+              {/* Header row */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="min-w-0 flex-1">
+                  {goal.phraseArabic && (
+                    <p className="font-amiri text-lg text-text mb-0.5 truncate" dir="rtl">
+                      {goal.phraseArabic}
+                    </p>
+                  )}
+                  <p className="text-sm font-semibold text-text">
+                    {goal.phraseEnglish || 'Dhikr Goal'}
                   </p>
-                )}
-                <p className="text-sm font-semibold text-text">
-                  {goal.phraseEnglish || 'Dhikr Goal'}
-                </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  {done && (
+                    <span className="badge badge-success flex items-center gap-1">
+                      <Check size={10} />
+                      Done
+                    </span>
+                  )}
+                  <span className={periodBadge[goal.period] || 'badge badge-primary'}>
+                    {goal.period}
+                  </span>
+                </div>
               </div>
-              <span className={periodBadge[goal.period] || 'badge badge-primary'}>
-                {goal.period}
-              </span>
+
+              {/* Progress bar */}
+              <div className="mb-2">
+                <div className="w-full bg-border-light h-2 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${done ? 'bg-success' : 'bg-primary'}`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Footer row */}
+              <div className="flex items-center justify-between text-xs text-text-muted">
+                <span className={`font-medium tabular-nums ${done ? 'text-success' : 'text-text'}`}>
+                  {current.toLocaleString()} / {goal.targetCount.toLocaleString()}
+                  <span className="text-text-muted font-normal ml-1">
+                    {periodLabel[goal.period] || ''}
+                  </span>
+                </span>
+                <span>
+                  {done
+                    ? '🎉 Complete!'
+                    : daysLeft !== undefined
+                    ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`
+                    : goal.startDate
+                    ? `Started ${new Date(goal.startDate).toLocaleDateString()}`
+                    : ''}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-xs text-text-muted">
-              <span>Target: {goal.targetCount}</span>
-              {goal.startDate && (
-                <span>Started {new Date(goal.startDate).toLocaleDateString()}</span>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <button onClick={onCreateGoal} className="btn-secondary w-full">
         <Plus size={15} />
@@ -724,34 +766,94 @@ function StatsTab({ stats }: { stats: DhikrStats | null }) {
     );
   }
 
+  const totalCount = (stats as any).totalCount ?? (stats as any).totalDhikr ?? 0;
+  const byPhrase: Array<{ phraseArabic: string; phraseEnglish: string; count: number }> =
+    (stats as any).byPhrase ?? [];
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <div className="card-elevated p-5">
-        <Moon size={18} className="text-primary mb-2" />
-        <p className="text-2xl font-bold text-text tabular-nums">{stats.totalCount}</p>
-        <p className="text-xs text-text-muted">Total Recitations</p>
+    <div className="space-y-4">
+      {/* 4-card stat row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="card-elevated p-5">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+            <Moon size={17} className="text-primary" />
+          </div>
+          <p className="text-2xl font-bold text-text tabular-nums">{totalCount.toLocaleString()}</p>
+          <p className="text-xs text-text-muted mt-1">Total Recitations</p>
+        </div>
+        <div className="card-elevated p-5">
+          <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3">
+            <Flame size={17} className="text-amber-500" />
+          </div>
+          <p className="text-2xl font-bold text-text tabular-nums">{stats.currentStreak ?? 0}</p>
+          <p className="text-xs text-text-muted mt-1">Current Streak</p>
+        </div>
+        <div className="card-elevated p-5">
+          <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center mb-3">
+            <TrendingUp size={17} className="text-success" />
+          </div>
+          <p className="text-2xl font-bold text-text tabular-nums">{stats.dailyAverage ?? 0}</p>
+          <p className="text-xs text-text-muted mt-1">Daily Average</p>
+        </div>
+        <div className="card-elevated p-5">
+          <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3">
+            <Target size={17} className="text-violet-500" />
+          </div>
+          <p className="text-2xl font-bold text-text tabular-nums">{stats.longestStreak ?? 0}</p>
+          <p className="text-xs text-text-muted mt-1">Longest Streak</p>
+        </div>
       </div>
-      <div className="card-elevated p-5">
-        <Flame size={18} className="text-amber-500 mb-2" />
-        <p className="text-2xl font-bold text-text tabular-nums">{stats.currentStreak}</p>
-        <p className="text-xs text-text-muted">Current Streak (days)</p>
-      </div>
-      <div className="card-elevated p-5">
-        <TrendingUp size={18} className="text-success mb-2" />
-        <p className="text-2xl font-bold text-text tabular-nums">{stats.dailyAverage}</p>
-        <p className="text-xs text-text-muted">Daily Average</p>
-      </div>
-      <div className="card-elevated p-5">
-        <Target size={18} className="text-violet-500 mb-2" />
-        <p className="text-2xl font-bold text-text tabular-nums">{stats.longestStreak}</p>
-        <p className="text-xs text-text-muted">Longest Streak (days)</p>
-      </div>
-      {stats.mostRecitedPhrase && (
-        <div className="card-elevated p-5 col-span-2">
-          <p className="text-xs text-text-muted mb-1">Most Recited</p>
-          <p className="text-base font-semibold text-text">{stats.mostRecitedPhrase}</p>
+
+      {/* Phrase breakdown */}
+      {byPhrase.length > 0 && (
+        <div className="card-elevated p-5">
+          <h4 className="text-sm font-semibold text-text mb-4 flex items-center gap-2">
+            <BarChart3 size={15} className="text-primary" />
+            Recitation Breakdown
+          </h4>
+          <div className="space-y-3">
+            {byPhrase.slice(0, 5).map((p) => {
+              const pct = totalCount > 0 ? Math.round((p.count / totalCount) * 100) : 0;
+              return (
+                <div key={p.phraseArabic}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-medium text-text truncate">{p.phraseEnglish}</span>
+                      <span className="font-amiri text-sm text-text-muted" dir="rtl">{p.phraseArabic}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-primary ml-2 shrink-0">
+                      {p.count.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-border-light rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
+
+      {/* Streak summary row */}
+      <div className="card-elevated p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+            <Flame size={17} className="text-amber-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text">Best Streak</p>
+            <p className="text-xs text-text-muted">Your longest consecutive days</p>
+          </div>
+        </div>
+        <p className="text-xl font-bold text-text tabular-nums">
+          {stats.longestStreak ?? 0}
+          <span className="text-xs font-normal text-text-muted ml-1">days</span>
+        </p>
+      </div>
     </div>
   );
 }

@@ -13,8 +13,10 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
+  Flame,
+  Check,
 } from "lucide-react";
-import { prayerAPI, calendarAPI, namesAPI } from "~/services/api";
+import { prayerAPI, calendarAPI, namesAPI, muhammadNamesAPI, dhikrAPI, quranAPI } from "~/services/api";
 import { getDailyInspiration } from "~/utils/dailyInspiration";
 import { FeelingsWidget } from "~/components/FeelingsWidget";
 import { useAuth } from "~/contexts/AuthContext";
@@ -57,6 +59,18 @@ function getLocalDateString(): string {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
+}
+
+/**
+ * Map the device timezone to a Hijri calendar adjustment:
+ *   0 = standard/Gulf/Umm al-Qura  (Ramadan 1 = Feb 18, 2026)
+ *   1 = India/Pakistan/Bangladesh/Sri Lanka  (Ramadan 1 = Feb 19, 2026)
+ */
+function getCalendarAdjust(): number {
+  if (typeof window === "undefined") return 0;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const indiaRegion = ["Asia/Kolkata", "Asia/Calcutta", "Asia/Karachi", "Asia/Dhaka", "Asia/Colombo"];
+  return indiaRegion.includes(tz) ? 1 : 0;
 }
 
 /** Parse time from API — handles ISO timestamps and HH:mm */
@@ -165,15 +179,25 @@ export default function Home() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [dailyName, setDailyName] = useState<DailyName | null>(null);
   const [dailyNameLoading, setDailyNameLoading] = useState(true);
+  const [muhammadDailyName, setMuhammadDailyName] = useState<DailyName | null>(null);
+
+  // Logged-in dashboard state
+  const [prayerStreak, setPrayerStreak] = useState<number>(0);
+  const [todayPrayerLogs, setTodayPrayerLogs] = useState<Record<string, string>>({});
+  const [dhikrTotal, setDhikrTotal] = useState<number>(0);
+  const [topCounter, setTopCounter] = useState<{ name: string; phraseArabic?: string; count: number; targetCount?: number } | null>(null);
+  const [latestBookmark, setLatestBookmark] = useState<{ surahId: number; verseNumber: number } | null>(null);
 
   // Fetch calendar data (today's date + upcoming events)
   useEffect(() => {
     // Compute "today" client-side to avoid server UTC clock mismatch
     const localToday = getLocalDateString();
 
+    const calendarAdjust = getCalendarAdjust();
+
     // Get accurate Hijri date by converting the real local date
     calendarAPI
-      .convertToHijri(localToday)
+      .convertToHijri(localToday, undefined, calendarAdjust)
       .then((res) => {
         const payload = res.data?.data || res.data;
         const h = payload?.hijri || payload;
@@ -191,7 +215,7 @@ export default function Home() {
 
     // Fetch events from getToday (events data is still useful)
     calendarAPI
-      .getToday()
+      .getToday(undefined, calendarAdjust)
       .then((res) => {
         const payload = res.data?.data || res.data;
         const h = payload?.hijri || payload;
@@ -204,7 +228,7 @@ export default function Home() {
     // Upcoming events from API
     setEventsLoading(true);
     calendarAPI
-      .getUpcomingEvents(90)
+      .getUpcomingEvents(90, undefined, calendarAdjust)
       .then((res) => {
         const data = res.data?.data || res.data;
         const eventsList = Array.isArray(data) ? data : data?.events || [];
@@ -249,6 +273,23 @@ export default function Home() {
         }
       })
       .finally(() => setDailyNameLoading(false));
+
+    // Fetch Muhammad daily name
+    muhammadNamesAPI.getDailyName()
+      .then((res) => {
+        const data = res.data?.data ?? res.data;
+        if (data && typeof data === "object") {
+          const d = data as Record<string, unknown>;
+          const nameArabic = (d.nameArabic ?? "") as string;
+          const name = (d.nameEnglish ?? d.name ?? "") as string;
+          const transliteration = (d.nameTranslit ?? "") as string;
+          const meaning = (d.meaning ?? "") as string;
+          if (name || nameArabic) {
+            setMuhammadDailyName({ nameArabic, name, transliteration, meaning });
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Fetch prayer times with Isha auto-advance
@@ -354,6 +395,64 @@ export default function Home() {
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, [nextPrayer]);
+
+  // Fetch personalized dashboard data for logged-in users
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const today = getLocalDateString();
+
+    // Prayer stats + today's logs
+    Promise.allSettled([
+      prayerAPI.getStats(),
+      prayerAPI.getLogs(today, today),
+    ]).then(([statsRes, logsRes]) => {
+      if (statsRes.status === "fulfilled") {
+        const data = statsRes.value.data?.data ?? statsRes.value.data;
+        setPrayerStreak(data?.streak ?? data?.currentStreak ?? data?.current_streak ?? 0);
+      }
+      if (logsRes.status === "fulfilled") {
+        const data = logsRes.value.data?.data ?? logsRes.value.data;
+        const logs = Array.isArray(data) ? data : [];
+        const logMap: Record<string, string> = {};
+        logs.forEach((log: any) => {
+          const name = (log.prayerName || log.prayer_name || "").toLowerCase();
+          logMap[name] = log.status;
+        });
+        setTodayPrayerLogs(logMap);
+      }
+    });
+
+    // Dhikr stats + counters
+    Promise.allSettled([
+      dhikrAPI.getStats(),
+      dhikrAPI.getCounters(),
+    ]).then(([statsRes, countersRes]) => {
+      if (statsRes.status === "fulfilled") {
+        const data = statsRes.value.data?.data ?? statsRes.value.data;
+        setDhikrTotal(data?.totalCount ?? data?.totalDhikr ?? 0);
+      }
+      if (countersRes.status === "fulfilled") {
+        const data = countersRes.value.data?.data ?? countersRes.value.data;
+        const counters = Array.isArray(data) ? data : [];
+        if (counters.length > 0) {
+          setTopCounter(counters[0]);
+        }
+      }
+    });
+
+    // Latest Quran bookmark
+    quranAPI.getBookmarks()
+      .then((res) => {
+        const data = res.data?.data ?? res.data;
+        const bookmarks = Array.isArray(data) ? data : [];
+        if (bookmarks.length > 0) {
+          const latest = bookmarks[0];
+          setLatestBookmark({ surahId: latest.surahId, verseNumber: latest.verseNumber });
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   return (
     <div className="bg-gradient-surface min-h-screen">
@@ -520,46 +619,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Asma ul Husna — daily name widget */}
+      {/* Names of the Day — two side-by-side cards */}
       <section className="container-faith -mt-6 relative z-10">
-        <Link
-          to="/names"
-          className="card-elevated p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6 group animate-fade-in-up"
-        >
-          <div className="flex items-start gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-              <Sparkles size={22} className="text-primary group-hover:text-white transition-colors" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-1">
-                Asma ul Husna
-              </p>
-              {dailyNameLoading ? (
-                <div className="flex items-center gap-2 text-text-muted">
-                  <Loader2 size={16} className="animate-spin" />
-                  <span className="text-sm">Loading today's name...</span>
-                </div>
-              ) : dailyName ? (
-                <>
-                  <p className="font-amiri text-xl sm:text-2xl text-text mb-0.5" dir="rtl">
-                    {dailyName.nameArabic}
-                  </p>
-                  <p className="text-base sm:text-lg font-semibold text-text">
-                    {dailyName.name}
-                  </p>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    {dailyName.transliteration} — {dailyName.meaning}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-text-muted">Reflect on the 99 Names of Allah</p>
-              )}
-            </div>
-          </div>
-          <span className="text-sm font-medium text-primary flex items-center gap-1 shrink-0 self-start sm:self-center group-hover:gap-2 transition-all">
-            View all <ChevronRight size={14} />
-          </span>
-        </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <DailyNameCard
+            to="/names"
+            label="Name of Allah"
+            icon={<Sparkles size={20} />}
+            iconColor="text-primary"
+            iconBg="bg-primary/10 group-hover:bg-primary"
+            name={dailyName}
+            loading={dailyNameLoading}
+          />
+          <DailyNameCard
+            to="/names/muhammad"
+            label="Name of the Prophet ﷺ"
+            icon={<Star size={20} />}
+            iconColor="text-amber-500"
+            iconBg="bg-amber-500/10 group-hover:bg-amber-500"
+            name={muhammadDailyName}
+            loading={dailyNameLoading}
+            animationDelay="0.06s"
+          />
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
@@ -585,6 +667,141 @@ export default function Home() {
             );
           })}
         </div>
+
+        {/* Logged-in dashboard */}
+        {isAuthenticated && (
+          <div className="mt-6 md:mt-8">
+            <div className="section-header mb-4">
+              <div>
+                <h2 className="section-title">Your Dashboard</h2>
+                <p className="section-subtitle">Today's spiritual overview</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Prayer streak card */}
+              <Link to="/prayers" className="card-elevated p-5 group hover:border-primary/20 transition-all">
+                {/* Streak header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-1">
+                      Prayer Streak
+                    </p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-text tabular-nums">{prayerStreak}</span>
+                      <span className="text-sm text-text-muted">days</span>
+                    </div>
+                  </div>
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${prayerStreak > 0 ? "bg-amber-500/10" : "bg-border-light"}`}>
+                    <Flame size={20} className={prayerStreak > 0 ? "text-amber-500" : "text-text-muted"} />
+                  </div>
+                </div>
+
+                {/* Today's prayers */}
+                <div className="border-t border-border-light pt-3">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold">
+                      Today
+                    </p>
+                    <p className="text-[10px] text-text-muted tabular-nums">
+                      {Object.keys(todayPrayerLogs).length}/5 prayed
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[
+                      { key: "fajr", label: "Fajr" },
+                      { key: "dhuhr", label: "Dhuhr" },
+                      { key: "asr", label: "Asr" },
+                      { key: "maghrib", label: "Mghrb" },
+                      { key: "isha", label: "Isha" },
+                    ].map(({ key, label }) => {
+                      const status = todayPrayerLogs[key];
+                      const logged = !!status;
+                      return (
+                        <div key={key} className="flex flex-col items-center gap-1">
+                          <div
+                            className={`w-full h-2 rounded-full transition-colors ${
+                              status === "on_time" ? "bg-success" :
+                              status === "late" ? "bg-amber-400" :
+                              status === "qada" ? "bg-orange-400" :
+                              "bg-border-light"
+                            }`}
+                          />
+                          <span className={`text-[9px] font-medium truncate w-full text-center ${logged ? "text-text-secondary" : "text-text-muted"}`}>
+                            {label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </Link>
+
+              {/* Dhikr counter card */}
+              <Link to="/dhikr" className="card-elevated p-5 group hover:border-primary/20 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                    <Moon size={18} className="text-purple-500" />
+                  </div>
+                  <span className="text-2xl font-bold text-text tabular-nums">
+                    {dhikrTotal.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-text mb-1">Total Dhikr</p>
+                {topCounter ? (
+                  <>
+                    <p className="text-xs text-text-muted mb-2">
+                      Active: {topCounter.name}
+                    </p>
+                    <div className="w-full bg-border-light h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-purple-500 rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(
+                            ((topCounter.count || 0) / (topCounter.targetCount || 33)) * 100,
+                            100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-text-muted mt-1.5">
+                      {topCounter.count || 0} / {topCounter.targetCount || 33}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-text-muted">Start counting dhikr</p>
+                )}
+              </Link>
+
+              {/* Last read Quran / resume */}
+              <Link
+                to={latestBookmark ? `/quran/${latestBookmark.surahId}?verse=${latestBookmark.verseNumber}` : "/quran"}
+                className="card-elevated p-5 group hover:border-primary/20 transition-all"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <BookOpen size={18} className="text-amber-500" />
+                  </div>
+                  <ChevronRight size={16} className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-sm font-semibold text-text mb-1">
+                  {latestBookmark ? "Resume Quran" : "Read Quran"}
+                </p>
+                {latestBookmark ? (
+                  <p className="text-xs text-text-muted">
+                    Last bookmarked: Surah {latestBookmark.surahId}, Verse {latestBookmark.verseNumber}
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-muted">Browse all 114 Surahs</p>
+                )}
+                <div className="mt-3">
+                  <span className="text-xs font-medium text-amber-600 bg-amber-500/10 px-2 py-1 rounded-lg">
+                    {latestBookmark ? "Continue reading →" : "Start reading →"}
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Feelings Widget - Premium Feature */}
@@ -749,36 +966,76 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA — only for guests (footer handles this for authenticated users) */}
-      {!isAuthenticated && (
-        <section className="bg-hero-gradient text-white pattern-islamic">
-          <div className="container-faith py-14 md:py-20 text-center">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-playfair mb-4 max-w-2xl mx-auto">
-              Begin Your Spiritual Journey Today
-            </h2>
-            <p className="text-white/70 text-base sm:text-lg max-w-lg mx-auto mb-8">
-              Create a free account to sync your progress, save bookmarks, and personalize your
-              experience.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link
-                to="/auth/register"
-                className="inline-flex items-center gap-2 bg-white text-primary-dark font-semibold px-8 py-3.5 rounded-xl hover:bg-white/90 transition-all shadow-lg"
-              >
-                Get Started Free
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                to="/auth/login"
-                className="inline-flex items-center gap-2 bg-white/15 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/25 transition-all border border-white/20"
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
     </div>
+  );
+}
+
+function DailyNameCard({
+  to,
+  label,
+  icon,
+  iconColor,
+  iconBg,
+  name,
+  loading,
+  animationDelay,
+}: {
+  to: string;
+  label: string;
+  icon: React.ReactNode;
+  iconColor: string;
+  iconBg: string;
+  name: DailyName | null;
+  loading: boolean;
+  animationDelay?: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="card-elevated p-5 flex items-center gap-4 group animate-fade-in-up"
+      style={animationDelay ? { animationDelay } : undefined}
+    >
+      {/* Icon */}
+      <div
+        className={`w-12 h-12 rounded-2xl ${iconBg} flex items-center justify-center shrink-0 transition-colors`}
+      >
+        <span className={`${iconColor} group-hover:text-white transition-colors`}>{icon}</span>
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-2">
+          {label}
+        </p>
+        {loading ? (
+          <>
+            <div className="h-4 w-20 bg-border-light rounded animate-pulse mb-1.5" />
+            <div className="h-3 w-32 bg-border-light rounded animate-pulse mb-1" />
+            <div className="h-3 w-24 bg-border-light rounded animate-pulse" />
+          </>
+        ) : name ? (
+          <>
+            <p className="font-amiri text-xl text-text leading-snug mb-0.5 text-right" dir="rtl">
+              {name.nameArabic}
+            </p>
+            <p className="text-sm font-semibold text-text truncate">{name.name}</p>
+            <p className="text-xs text-text-muted mt-0.5 truncate">{name.transliteration}</p>
+          </>
+        ) : (
+          <>
+            <div className="h-4 w-16 bg-border-light rounded mb-1.5" />
+            <div className="h-3 w-28 bg-border-light rounded mb-1" />
+            <div className="h-3 w-20 bg-border-light rounded" />
+          </>
+        )}
+      </div>
+
+      {/* Chevron */}
+      <ChevronRight
+        size={15}
+        className="text-text-muted shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+    </Link>
   );
 }
 
@@ -859,7 +1116,7 @@ function DailyInspirationCard() {
 
   if (loading) {
     return (
-      <div className="card-elevated p-6 sm:p-8 flex items-center justify-center min-h-[200px]">
+      <div className="card-elevated p-6 sm:p-8 flex items-center justify-center min-h-50">
         <Loader2 size={24} className="animate-spin text-primary" />
       </div>
     );

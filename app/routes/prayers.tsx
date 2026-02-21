@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import {
   MapPin,
@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  X,
   TrendingUp,
   ChevronDown,
   Search,
@@ -150,6 +151,22 @@ export default function PrayersPage() {
   const [citySearch, setCitySearch] = useState("");
   const [detectingLocation, setDetectingLocation] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Derived map: prayer name → { id, status } for the currently selected date
+  const loggedPrayerMap = useMemo(() => {
+    const selectedStr = format(selectedDate, "yyyy-MM-dd");
+    const map = new Map<string, { id: string; status: string }>();
+    prayerLogs.forEach((log: any) => {
+      // log.date from API is ISO string like "2026-02-21T00:00:00.000Z"
+      const logDate = typeof log.date === "string" ? log.date.split("T")[0] : "";
+      if (logDate === selectedStr) {
+        const raw = log.prayerName || log.prayer_name || "";
+        const name = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+        map.set(name, { id: log.id, status: log.status });
+      }
+    });
+    return map;
+  }, [prayerLogs, selectedDate]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -362,11 +379,16 @@ export default function PrayersPage() {
     async (name: string, status: "on_time" | "late" | "qada" = "on_time") => {
       if (!user) return;
       try {
-        await prayerAPI.logPrayer(
-          name.toLowerCase(),
-          format(displayedDate, "yyyy-MM-dd"),
-          status
-        );
+        const dateStr = format(displayedDate, "yyyy-MM-dd");
+        const result = await prayerAPI.logPrayer(name.toLowerCase(), dateStr, status);
+        const newLog = result.data?.data || result.data;
+        // Add/update the log in prayerLogs state
+        if (newLog?.id) {
+          setPrayerLogs((prev: any[]) => {
+            const filtered = prev.filter((l: any) => l.id !== newLog.id);
+            return [...filtered, newLog];
+          });
+        }
         setLoggedPrayers((prev) => new Set(prev).add(name));
         setShowStatusPicker(null);
         // Refresh stats
@@ -379,6 +401,20 @@ export default function PrayersPage() {
     [user, displayedDate]
   );
 
+  const handleUnlogPrayer = useCallback(
+    async (name: string) => {
+      if (!user) return;
+      const log = loggedPrayerMap.get(name);
+      if (!log?.id) return;
+      try {
+        await prayerAPI.deleteLog(log.id);
+        // Remove from prayerLogs state
+        setPrayerLogs((prev: any[]) => prev.filter((l: any) => l.id !== log.id));
+      } catch {}
+    },
+    [user, loggedPrayerMap]
+  );
+
   const changeDate = (days: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
@@ -386,6 +422,7 @@ export default function PrayersPage() {
   };
 
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+  const isFuture = selectedDate > new Date() && !isToday;
 
   const filteredCities = citySearch.trim()
     ? POPULAR_CITIES.filter(
@@ -613,7 +650,7 @@ export default function PrayersPage() {
                 const meta = PRAYER_META[name];
                 const Icon = meta.icon;
                 const isNext = name === nextPrayer && isToday;
-                const isLogged = loggedPrayers.has(name);
+                const isLogged = loggedPrayerMap.has(name);
                 const isPassed = (() => {
                   if (!timeHHMM || !isToday) return false;
                   const [h, m] = timeHHMM.split(":").map(Number);
@@ -654,12 +691,19 @@ export default function PrayersPage() {
                     </p>
 
                     {/* Prayer Log Buttons */}
-                    {user && isToday && (
+                    {user && !isFuture && (
                       <div className="mt-4 relative">
-                        {isLogged ? (
-                          <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium bg-success/10 text-success">
-                            <Check size={14} /> Prayed
-                          </div>
+                        {loggedPrayerMap.has(name) ? (
+                          <button
+                            onClick={() => handleUnlogPrayer(name)}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium bg-success/10 text-success hover:bg-rose-500/10 hover:text-rose-600 transition-colors group"
+                            title="Click to unmark"
+                          >
+                            <Check size={14} className="group-hover:hidden" />
+                            <X size={14} className="hidden group-hover:block" />
+                            <span className="group-hover:hidden">Prayed</span>
+                            <span className="hidden group-hover:block">Unmark</span>
+                          </button>
                         ) : showStatusPicker === name ? (
                           <div className="space-y-1.5">
                             <p className="text-[10px] text-text-muted uppercase tracking-wider text-center mb-2">
@@ -695,6 +739,11 @@ export default function PrayersPage() {
                             Mark as Prayed
                           </button>
                         )}
+                      </div>
+                    )}
+                    {user && isFuture && (
+                      <div className="mt-4 py-2.5 px-3 rounded-xl bg-border-light text-xs text-text-muted text-center">
+                        Can't log future prayers
                       </div>
                     )}
                   </div>
@@ -756,11 +805,11 @@ export default function PrayersPage() {
                       <div>
                         <h3 className="text-base font-semibold text-text">Today's Progress</h3>
                         <p className="text-xs text-text-muted">
-                          {loggedPrayers.size} of 5 prayers completed
+                          {loggedPrayerMap.size} of 5 prayers completed
                         </p>
                       </div>
                       <div className="ml-auto text-2xl font-bold text-primary tabular-nums">
-                        {Math.round((loggedPrayers.size / 5) * 100)}%
+                        {Math.round((loggedPrayerMap.size / 5) * 100)}%
                       </div>
                     </div>
 
@@ -768,7 +817,7 @@ export default function PrayersPage() {
                     <div className="w-full h-3 bg-border-light rounded-full mb-6 overflow-hidden">
                       <div
                         className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${(loggedPrayers.size / 5) * 100}%` }}
+                        style={{ width: `${(loggedPrayerMap.size / 5) * 100}%` }}
                       />
                     </div>
 
@@ -777,12 +826,12 @@ export default function PrayersPage() {
                         <div key={name} className="text-center">
                           <div
                             className={`w-10 h-10 rounded-full mx-auto flex items-center justify-center mb-1.5 transition-colors ${
-                              loggedPrayers.has(name)
+                              loggedPrayerMap.has(name)
                                 ? "bg-success text-white"
                                 : "bg-border-light text-text-muted"
                             }`}
                           >
-                            {loggedPrayers.has(name) ? <Check size={14} /> : <Clock size={12} />}
+                            {loggedPrayerMap.has(name) ? <Check size={14} /> : <Clock size={12} />}
                           </div>
                           <p className="text-[11px] text-text-muted font-medium">{name}</p>
                         </div>

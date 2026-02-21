@@ -61,6 +61,22 @@ function getLocalDateString(timezone: string): string {
   }).format(new Date());
 }
 
+/**
+ * Map a timezone to a Hijri calendar adjustment:
+ *   0 = standard / Gulf / Umm al-Qura (Ramadan 1 = Feb 18, 2026)
+ *   1 = India / Pakistan / Bangladesh / Sri Lanka (Ramadan 1 = Feb 19, 2026)
+ */
+function getCalendarAdjust(timezone: string): number {
+  const indiaRegion = [
+    "Asia/Kolkata",
+    "Asia/Calcutta",
+    "Asia/Karachi",
+    "Asia/Dhaka",
+    "Asia/Colombo",
+  ];
+  return indiaRegion.includes(timezone) ? 1 : 0;
+}
+
 interface CalendarDay {
   gregorianDay: number;
   hijriDay?: number;
@@ -90,14 +106,18 @@ export default function CalendarPage() {
   const [convertedHijri, setConvertedHijri] = useState<any>(null);
   const [convertHijri, setConvertHijri] = useState({ year: 1447, month: 8, day: 27 });
   const [convertedGregorian, setConvertedGregorian] = useState<any>(null);
-  const [selectedTimezone, setSelectedTimezone] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    }
-    return "UTC";
-  });
+  // Start as "UTC" for SSR/hydration compatibility; a dedicated effect updates
+  // to the real client timezone after mount so calendarAdjust is computed correctly.
+  const [selectedTimezone, setSelectedTimezone] = useState("UTC");
   const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false);
 
+  // Set the real client timezone once after hydration
+  useEffect(() => {
+    const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (clientTz && clientTz !== "UTC") {
+      setSelectedTimezone(clientTz);
+    }
+  }, []);
 
   // Fetch all calendar data on load
   useEffect(() => {
@@ -107,13 +127,15 @@ export default function CalendarPage() {
       // (the API's getToday uses the server clock which may be UTC)
       const localToday = getLocalDateString(selectedTimezone);
 
+      const calendarAdjust = getCalendarAdjust(selectedTimezone);
+
       try {
         const [hijriRes, todayRes, eventsRes, upcomingRes, monthRes] = await Promise.allSettled([
-          calendarAPI.convertToHijri(localToday, selectedTimezone),
-          calendarAPI.getToday(selectedTimezone),
+          calendarAPI.convertToHijri(localToday, selectedTimezone, calendarAdjust),
+          calendarAPI.getToday(selectedTimezone, calendarAdjust),
           calendarAPI.getEvents(),
-          calendarAPI.getUpcomingEvents(90, selectedTimezone),
-          calendarAPI.getGregorianMonth(currentDate.getFullYear(), currentDate.getMonth() + 1, selectedTimezone),
+          calendarAPI.getUpcomingEvents(90, selectedTimezone, calendarAdjust),
+          calendarAPI.getGregorianMonth(currentDate.getFullYear(), currentDate.getMonth() + 1, selectedTimezone, calendarAdjust),
         ]);
 
         // Use convertToHijri for accurate Hijri date based on the real local date

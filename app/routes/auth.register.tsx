@@ -9,6 +9,7 @@ import {
   Mail,
   Lock,
   User,
+  Phone,
   Check,
   X,
   Clock,
@@ -19,7 +20,9 @@ import { useAuth } from "~/contexts/AuthContext";
 
 const registerSchema = z
   .object({
-    fullName: z.string().min(2, "Name must be at least 2 characters"),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    phone: z.string().min(5, "Phone number is required"),
     email: z.string().email("Please enter a valid email"),
     password: z
       .string()
@@ -63,10 +66,11 @@ export default function RegisterPage() {
   const onRegister = async (data: RegisterForm) => {
     try {
       setError("");
-      await registerUser(data.email, data.password, data.fullName);
+      await registerUser(data.email, data.password, data.firstName, data.lastName, data.phone);
       navigate("/");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg[0] : msg || "Registration failed. Please try again.");
     }
   };
 
@@ -148,22 +152,54 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit(onRegister)} className="space-y-5">
+            {/* First + Last name side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-text mb-1.5 block">First Name</label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input
+                    {...register("firstName")}
+                    className="input-field input-with-left-icon w-full"
+                    placeholder="First"
+                    autoComplete="given-name"
+                  />
+                </div>
+                {errors.firstName && (
+                  <p className="text-error text-xs mt-1.5">{errors.firstName.message}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-text mb-1.5 block">Last Name</label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input
+                    {...register("lastName")}
+                    className="input-field input-with-left-icon w-full"
+                    placeholder="Last"
+                    autoComplete="family-name"
+                  />
+                </div>
+                {errors.lastName && (
+                  <p className="text-error text-xs mt-1.5">{errors.lastName.message}</p>
+                )}
+              </div>
+            </div>
+
             <div>
-              <label className="text-sm font-medium text-text mb-1.5 block">Full Name</label>
+              <label className="text-sm font-medium text-text mb-1.5 block">Phone Number</label>
               <div className="relative">
-                <User
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-                />
+                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
                 <input
-                  {...register("fullName")}
+                  {...register("phone")}
+                  type="tel"
                   className="input-field input-with-left-icon w-full"
-                  placeholder="Your name"
-                  autoComplete="name"
+                  placeholder="+91 98765 43210"
+                  autoComplete="tel"
                 />
               </div>
-              {errors.fullName && (
-                <p className="text-error text-xs mt-1.5">{errors.fullName.message}</p>
+              {errors.phone && (
+                <p className="text-error text-xs mt-1.5">{errors.phone.message}</p>
               )}
             </div>
 

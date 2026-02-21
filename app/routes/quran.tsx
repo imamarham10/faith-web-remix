@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { Search, BookOpen, Loader2, MapPin, ChevronRight } from "lucide-react";
+import { Search, BookOpen, Loader2, MapPin, ChevronRight, Bookmark } from "lucide-react";
 import { quranAPI } from "~/services/api";
 import type { Surah } from "~/types";
 
@@ -62,19 +62,28 @@ export default function QuranPage() {
       </section>
 
       <div className="container-faith py-8 md:py-12">
-        {/* Surah Count */}
+        {/* Surah Count + Bookmarks link */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-text-secondary">
             {loading ? "Loading..." : `${filtered.length} Surahs`}
           </p>
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="text-sm text-primary font-medium"
+          <div className="flex items-center gap-3">
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="text-sm text-primary font-medium"
+              >
+                Clear search
+              </button>
+            )}
+            <Link
+              to="/quran/bookmarks"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
-              Clear search
-            </button>
-          )}
+              <Bookmark size={15} />
+              My Bookmarks
+            </Link>
+          </div>
         </div>
 
         {loading ? (
