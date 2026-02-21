@@ -48,7 +48,7 @@ export const meta: Route.MetaFunction = ({ location }) => {
   else if (pathname.startsWith("/names")) pageTitle = "Siraat | Names";
   else if (pathname.startsWith("/feelings")) pageTitle = "Siraat | Feelings";
   else if (pathname.startsWith("/auth")) pageTitle = "Siraat | Auth";
-  else pageTitle = "Siraat | Home";
+  else pageTitle = appName;
 
   return [
     { title: pageTitle },

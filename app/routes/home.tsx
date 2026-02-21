@@ -21,16 +21,6 @@ import { getDailyInspiration } from "~/utils/dailyInspiration";
 import { FeelingsWidget } from "~/components/FeelingsWidget";
 import { useAuth } from "~/contexts/AuthContext";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Siraat - Your Spiritual Companion" },
-    {
-      name: "description",
-      content:
-        "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.",
-    },
-  ];
-}
 
 function getGreeting(): string {
   const hour = new Date().getHours();
