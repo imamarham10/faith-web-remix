@@ -15,6 +15,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { Analytics } from "@vercel/analytics/react";
 
 const appName = "Siraat - Your Spiritual Companion";
 const appDescription = "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.";
@@ -95,6 +96,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </LanguageProvider>
         <ScrollRestoration />
         <Scripts />
+        <Analytics />
       </body>
     </html>
   );
