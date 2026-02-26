@@ -8,7 +8,7 @@ import { useAuth } from "~/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -38,11 +38,24 @@ export default function LoginPage() {
       await login(data.email, data.password);
       navigate("/");
     } catch (err: any) {
-      setError(
-        err.response?.status === 401
-          ? "Invalid email or password"
-          : "An error occurred. Please try again."
-      );
+      if (err.response) {
+        const { status, data } = err.response;
+        switch (status) {
+          case 400:
+            setError(data.message || 'Invalid input. Please check your details.');
+            break;
+          case 401:
+            setError('Invalid email or password.');
+            break;
+          case 429:
+            setError('Too many attempts. Please try again later.');
+            break;
+          default:
+            setError('Something went wrong. Please try again.');
+        }
+      } else {
+        setError('Network error. Please check your connection.');
+      }
     }
   };
 
@@ -69,8 +82,25 @@ export default function LoginPage() {
       setError("");
       await loginWithOTP(email, otp);
       navigate("/");
-    } catch {
-      setError("Invalid OTP");
+    } catch (err: any) {
+      if (err.response) {
+        const { status, data } = err.response;
+        switch (status) {
+          case 400:
+            setError(data.message || 'Invalid input. Please check your details.');
+            break;
+          case 401:
+            setError('Invalid OTP. Please try again.');
+            break;
+          case 429:
+            setError('Too many attempts. Please try again later.');
+            break;
+          default:
+            setError('Something went wrong. Please try again.');
+        }
+      } else {
+        setError('Network error. Please check your connection.');
+      }
     }
   };
 

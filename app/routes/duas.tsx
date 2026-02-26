@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Route } from "./+types/duas";
 import { Link } from "react-router";
-import { ArrowLeft, Loader2, AlertCircle, BookOpen, HandHeart } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, BookOpen, HandHeart, Search, X } from "lucide-react";
 import { duasAPI } from "~/services/api";
 import type { Dua, DuaCategory } from "~/types";
 
@@ -22,6 +22,39 @@ export default function DuasPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Dua[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(() => {
+      duasAPI
+        .search(query)
+        .then((res) => {
+          const data = res.data?.data || res.data;
+          setSearchResults(Array.isArray(data) ? data : []);
+        })
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearchLoading(false));
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, []);
 
   const fetchData = () => {
     setLoading(true);
@@ -109,8 +142,33 @@ export default function DuasPage() {
           </div>
         ) : (
           <div className="animate-fade-in-up">
+            {/* Search Bar */}
+            <div className="card-elevated p-4 mb-6">
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+                />
+                <input
+                  type="text"
+                  placeholder="Search duas..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="input-field input-with-left-icon w-full pr-10"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => handleSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Category Filter Tabs */}
-            {categories.length > 0 && (
+            {categories.length > 0 && !searchQuery && (
               <div className="card-elevated p-4 mb-6 overflow-x-auto">
                 <div className="flex items-center gap-2 min-w-max">
                   <button
@@ -141,30 +199,43 @@ export default function DuasPage() {
             )}
 
             {/* Duas Grid */}
-            {filteredDuas.length === 0 ? (
+            {searchLoading ? (
+              <div className="card-elevated p-12 flex flex-col items-center justify-center min-h-[300px]">
+                <Loader2 size={24} className="animate-spin text-primary mb-3" />
+                <p className="text-text-muted text-sm">Searching...</p>
+              </div>
+            ) : (searchQuery ? searchResults : filteredDuas).length === 0 ? (
               <div className="card-elevated p-12 flex flex-col items-center justify-center text-center min-h-[300px]">
                 <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">
                   <BookOpen size={28} className="text-primary/40" />
                 </div>
                 <h3 className="text-lg font-semibold text-text mb-2">
-                  No duas available yet
+                  {searchQuery ? "No duas found" : "No duas available yet"}
                 </h3>
                 <p className="text-text-muted max-w-sm">
-                  We're working on adding duas for this category. Check back
-                  soon.
+                  {searchQuery
+                    ? `No results for "${searchQuery}". Try a different search term.`
+                    : "We're working on adding duas for this category. Check back soon."}
                 </p>
-                {selectedCategoryId !== "all" && (
+                {searchQuery ? (
+                  <button
+                    onClick={() => handleSearch("")}
+                    className="btn-secondary mt-4"
+                  >
+                    Clear search
+                  </button>
+                ) : selectedCategoryId !== "all" ? (
                   <button
                     onClick={() => setSelectedCategoryId("all")}
                     className="btn-secondary mt-4"
                   >
                     View all duas
                   </button>
-                )}
+                ) : null}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {filteredDuas.map((dua, i) => {
+                {(searchQuery ? searchResults : filteredDuas).map((dua, i) => {
                   const categoryName =
                     dua.category?.name ||
                     categories.find((c) => c.id === dua.categoryId)?.name;

@@ -1,47 +1,34 @@
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import { ENV } from '../utils/env';
 
-// Create axios instance
+// Create axios instance with credentials for httpOnly cookie auth
 const api: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 10000,
+  withCredentials: true,
 });
 
 // Global refresh lock to prevent concurrent refresh attempts
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (token: string) => void;
+  resolve: () => void;
   reject: (error: any) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token!);
+      prom.resolve();
     }
   });
 
   failedQueue = [];
 };
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor for error handling
 api.interceptors.response.use(
@@ -53,12 +40,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // Queue the request while refresh is in progress
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
+        }).then(() => {
           return api(originalRequest);
         }).catch((err) => Promise.reject(err));
       }
@@ -67,33 +51,18 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken,
-          });
+        await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {}, {
+          withCredentials: true,
+        });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem('accessToken', accessToken);
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
-          }
+        processQueue(null);
+        isRefreshing = false;
 
-          processQueue(null, accessToken);
-          isRefreshing = false;
-
-          // Retry original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-          return api(originalRequest);
-        }
+        return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed — clear tokens but don't redirect.
+        // Refresh failed — clear auth state but don't redirect.
         // Pages handle 401s gracefully; only auth-required features degrade.
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        processQueue(refreshError, null);
+        processQueue(refreshError);
         isRefreshing = false;
         return Promise.reject(refreshError);
       }
@@ -119,8 +88,8 @@ export const authAPI = {
   verifyOTP: (email: string, otp: string) =>
     api.post('/auth/login/verify-otp', { email, otp }),
   
-  logout: (refreshToken: string) =>
-    api.post('/auth/logout', { refresh_token: refreshToken }),
+  logout: () =>
+    api.post('/auth/logout'),
   
   getProfile: () =>
     api.get('/auth/profile'),
@@ -199,7 +168,7 @@ export const dhikrAPI = {
   getCounters: () =>
     api.get('/api/v1/islam/dhikr/counters'),
 
-  createCounter: (name: string, phrase?: string, targetCount?: number) =>
+  createCounter: (name: string, phrase: string, targetCount?: number) =>
     api.post('/api/v1/islam/dhikr/counters', { name, phrase, targetCount }),
 
   updateCounter: (id: string, count: number) =>

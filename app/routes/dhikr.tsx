@@ -169,7 +169,7 @@ export default function DhikrPage() {
   };
 
   const handleCreate = async (name: string, phrase: string, target: number) => {
-    if (!user || !name.trim()) return;
+    if (!user || !name.trim() || !phrase.trim()) return;
     try {
       const res = await dhikrAPI.createCounter(name, phrase, target);
       const newCounter = res.data?.data || res.data;

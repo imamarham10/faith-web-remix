@@ -6,7 +6,8 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "test:e2e": "npx tsx e2e/run.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -29,6 +30,7 @@
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "puppeteer": "^24.37.5",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
