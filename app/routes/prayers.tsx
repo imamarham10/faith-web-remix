@@ -21,8 +21,10 @@ import {
   History,
   AlertCircle,
 } from "lucide-react";
+import { useLoaderData } from "react-router";
 import { prayerAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
+import { JsonLd } from "~/components/JsonLd";
 
 const PRAYER_NAMES = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
@@ -115,10 +117,28 @@ function normalizePrayerTimes(apiData: any): Record<string, string> {
   return normalized;
 }
 
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`${API_BASE}/api/v1/islam/prayers/times?lat=21.4225&lng=39.8262&date=${today}`);
+    if (!res.ok) return { defaultPrayerTimes: null };
+    const json = await res.json();
+    return { defaultPrayerTimes: json.data || json };
+  } catch {
+    return { defaultPrayerTimes: null };
+  }
+}
+
 export default function PrayersPage() {
+  const loaderData = useLoaderData<typeof loader>();
   const { user } = useAuth();
-  const [timings, setTimings] = useState<Record<string, string> | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // Use loader's default Mecca prayer times as initial fallback
+  const initialTimings = loaderData?.defaultPrayerTimes ? normalizePrayerTimes(loaderData.defaultPrayerTimes) : null;
+
+  const [timings, setTimings] = useState<Record<string, string> | null>(initialTimings);
+  const [loading, setLoading] = useState(!initialTimings);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState("Select Location");
@@ -420,6 +440,16 @@ export default function PrayersPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Siraat Prayer Times",
+        "description": "Accurate prayer times based on your location with countdown timer and prayer tracking.",
+        "url": "https://siraatt.vercel.app/prayers",
+        "applicationCategory": "ReligiousApp",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }} />
       {/* Hero */}
       <section className="bg-gradient-prayer text-white pattern-islamic">
         <div className="container-faith py-10 md:py-14">
@@ -429,7 +459,7 @@ export default function PrayersPage() {
               <div className="relative mb-4" ref={dropdownRef}>
                 <button
                   onClick={() => setShowLocationDropdown(!showLocationDropdown)}
-                  className="flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl border border-white/10"
+                  className="flex items-center gap-2 text-white/90 hover:text-white text-sm transition-colors bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl border border-white/10"
                 >
                   <MapPin size={14} />
                   <span className="max-w-[240px] truncate">{locationName}</span>
@@ -497,11 +527,11 @@ export default function PrayersPage() {
                 Prayer Times
               </h1>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-white/60 text-sm">
+                <p className="text-white/90 text-sm">
                   {format(displayedDate, "EEEE, d MMMM yyyy")}
                 </p>
                 {isPastIsha && (
-                  <span className="inline-block bg-white/20 text-white/80 text-xs px-2.5 py-1 rounded-full font-medium">
+                  <span className="inline-block bg-white/20 text-white/90 text-xs px-2.5 py-1 rounded-full font-medium">
                     Tomorrow (past Isha)
                   </span>
                 )}
@@ -512,7 +542,7 @@ export default function PrayersPage() {
                 <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10 inline-flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                   <div>
-                    <p className="text-white/50 text-[10px] uppercase tracking-wider">
+                    <p className="text-white/90 text-[11px] uppercase tracking-wider">
                       Current Period
                     </p>
                     <p className="text-white text-sm font-semibold">
@@ -526,7 +556,7 @@ export default function PrayersPage() {
                     <>
                       <div className="w-px h-8 bg-white/15" />
                       <div>
-                        <p className="text-white/50 text-[10px] uppercase tracking-wider">
+                        <p className="text-white/90 text-[11px] uppercase tracking-wider">
                           Coming Up
                         </p>
                         <p className="text-white text-sm font-semibold">
@@ -542,11 +572,11 @@ export default function PrayersPage() {
             {/* Next Prayer Countdown */}
             <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/15">
-                <p className="text-white/50 text-xs uppercase tracking-wider mb-1">Next Prayer</p>
+                <p className="text-white/90 text-xs uppercase tracking-wider mb-1">Next Prayer</p>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-3xl font-bold text-white">{nextPrayer}</p>
                   {timings?.[nextPrayer] && (
-                    <span className="text-white/60 text-sm tabular-nums">
+                    <span className="text-white/90 text-sm tabular-nums">
                       {formatTo12h(timings[nextPrayer])}
                     </span>
                   )}
@@ -559,7 +589,7 @@ export default function PrayersPage() {
                   ].map(({ val, label }) => (
                     <div key={label} className="bg-white/10 rounded-xl px-3 py-2.5 text-center flex-1">
                       <span className="text-2xl font-bold tabular-nums text-white">{val}</span>
-                      <p className="text-[10px] text-white/40 uppercase">{label}</p>
+                      <p className="text-[11px] text-white/90 uppercase">{label}</p>
                     </div>
                   ))}
                 </div>
@@ -570,6 +600,19 @@ export default function PrayersPage() {
       </section>
 
       <div className="container-faith py-8 md:py-12">
+        {/* Educational Introduction */}
+        <div className="card-elevated p-6 md:p-8 mb-8">
+          <h2 className="font-playfair text-xl md:text-2xl font-bold text-text mb-4">Understanding the Five Daily Prayers in Islam</h2>
+          <div className="space-y-3">
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Salah, the five daily prayers, is one of the Five Pillars of Islam and the most important act of worship a Muslim performs each day. The five prayers are Fajr (pre-dawn), Dhuhr (midday), Asr (afternoon), Maghrib (sunset), and Isha (night). Each prayer connects the believer to Allah at specific intervals throughout the day, providing spiritual discipline, mindfulness, and a sense of community shared by nearly two billion Muslims worldwide.
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Prayer times are calculated using precise astronomical methods based on the position of the sun relative to the observer's geographic location. Fajr begins at the first light of dawn, Dhuhr when the sun passes its zenith, Asr in the mid-afternoon when shadows reach a specific length, Maghrib immediately after sunset, and Isha once twilight has fully disappeared. Because these times depend on latitude, longitude, and the time of year, they vary daily and differ across the world. Our calculator uses trusted astronomical algorithms to provide accurate timings for your exact location.
+            </p>
+          </div>
+        </div>
+
         {/* Date Navigator */}
         <div className="flex items-center justify-between mb-8">
           <button
@@ -647,12 +690,12 @@ export default function PrayersPage() {
                   >
                     {isNext && (
                       <div className="absolute top-3 right-3">
-                        <span className="badge badge-primary text-[10px]">Next</span>
+                        <span className="badge badge-primary text-[11px]">Next</span>
                       </div>
                     )}
                     {isPassed && !isNext && isToday && (
                       <div className="absolute top-3 right-3">
-                        <span className="text-[10px] text-text-muted font-medium">Passed</span>
+                        <span className="text-[11px] text-text-muted font-medium">Passed</span>
                       </div>
                     )}
 
@@ -684,7 +727,7 @@ export default function PrayersPage() {
                           </button>
                         ) : showStatusPicker === name ? (
                           <div className="space-y-1.5">
-                            <p className="text-[10px] text-text-muted uppercase tracking-wider text-center mb-2">
+                            <p className="text-[11px] text-text-muted uppercase tracking-wider text-center mb-2">
                               Log status
                             </p>
                             {(
@@ -704,7 +747,7 @@ export default function PrayersPage() {
                             ))}
                             <button
                               onClick={() => setShowStatusPicker(null)}
-                              className="w-full py-1.5 text-[10px] text-text-muted hover:text-text"
+                              className="w-full py-1.5 text-[11px] text-text-muted hover:text-text"
                             >
                               Cancel
                             </button>

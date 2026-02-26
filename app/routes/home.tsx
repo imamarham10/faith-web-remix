@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Route } from "./+types/home";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import {
   Clock,
   BookOpen,
@@ -20,6 +20,7 @@ import { prayerAPI, calendarAPI, namesAPI, muhammadNamesAPI, dhikrAPI, quranAPI 
 import { getDailyInspiration } from "~/utils/dailyInspiration";
 import { FeelingsWidget } from "~/components/FeelingsWidget";
 import { useAuth } from "~/contexts/AuthContext";
+import { JsonLd } from "~/components/JsonLd";
 
 
 function getGreeting(): string {
@@ -156,19 +157,103 @@ interface DailyName {
   meaning: string;
 }
 
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const today = new Date().toISOString().split('T')[0];
+
+  const [calendarRes, eventsRes, dailyNameRes, emotionsRes] = await Promise.allSettled([
+    fetch(`${API_BASE}/api/v1/islam/calendar/today`),
+    fetch(`${API_BASE}/api/v1/islam/calendar/events/upcoming?days=90`),
+    fetch(`${API_BASE}/api/v1/islam/names/daily`),
+    fetch(`${API_BASE}/api/v1/islam/feelings`),
+  ]);
+
+  // Calendar today — extract hijri date info
+  let calendarToday: any = null;
+  if (calendarRes.status === "fulfilled" && calendarRes.value.ok) {
+    try {
+      const json = await calendarRes.value.json();
+      calendarToday = json.data || json;
+    } catch {}
+  }
+
+  // Upcoming events
+  let upcomingEvents: any[] = [];
+  if (eventsRes.status === "fulfilled" && eventsRes.value.ok) {
+    try {
+      const json = await eventsRes.value.json();
+      const data = json.data || json;
+      const eventsList = Array.isArray(data) ? data : data?.events || [];
+      upcomingEvents = eventsList.slice(0, 5);
+    } catch {}
+  }
+
+  // Daily name of Allah
+  let dailyName: { nameArabic: string; name: string; transliteration: string; meaning: string } | null = null;
+  if (dailyNameRes.status === "fulfilled" && dailyNameRes.value.ok) {
+    try {
+      const json = await dailyNameRes.value.json();
+      const data = json.data || json;
+      if (data && typeof data === "object") {
+        const nameArabic = (data.nameArabic ?? data.name_arabic ?? "") as string;
+        const name = (data.nameEnglish ?? data.name ?? "") as string;
+        const transliteration = (data.nameTranslit ?? data.name_translit ?? "") as string;
+        const meaning = (data.meaning ?? "") as string;
+        if (name || nameArabic) {
+          dailyName = { nameArabic, name, transliteration, meaning };
+        }
+      }
+    } catch {}
+  }
+
+  // All emotions for FeelingsWidget
+  let emotions: any[] = [];
+  if (emotionsRes.status === "fulfilled" && emotionsRes.value.ok) {
+    try {
+      const json = await emotionsRes.value.json();
+      const data = json.data || json;
+      if (Array.isArray(data)) {
+        emotions = data;
+      }
+    } catch {}
+  }
+
+  return { calendarToday, upcomingEvents, dailyName, emotions };
+}
+
 export default function Home() {
+  const loaderData = useLoaderData<typeof loader>();
   const { isAuthenticated } = useAuth();
-  const [hijriDate, setHijriDate] = useState<string>("");
-  const [todayEvents, setTodayEvents] = useState<any[]>([]);
+
+  // Derive initial hijri date from loader's calendarToday
+  const initialHijri = (() => {
+    const h = loaderData?.calendarToday?.hijri || loaderData?.calendarToday;
+    if (!h) return "";
+    const day = h.hijriDay || h.day || h.date || "";
+    const month = h.hijriMonthName || h.monthName || h.month_name || h.month?.en || h.month?.name || "";
+    const year = h.hijriYear || h.year || "";
+    if (day && year) return `${day} ${month} ${year} AH`;
+    return "";
+  })();
+
+  // Derive initial today events from loader
+  const initialTodayEvents = (() => {
+    const h = loaderData?.calendarToday?.hijri || loaderData?.calendarToday;
+    if (h?.events && h.events.length > 0) return h.events;
+    return [];
+  })();
+
+  const [hijriDate, setHijriDate] = useState<string>(initialHijri);
+  const [todayEvents, setTodayEvents] = useState<any[]>(initialTodayEvents);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimings | null>(null);
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time: string } | null>(null);
   const [countdown, setCountdown] = useState("");
   const [locationName, setLocationName] = useState("Locating...");
   const [isPastIsha, setIsPastIsha] = useState(false);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(true);
-  const [dailyName, setDailyName] = useState<DailyName | null>(null);
-  const [dailyNameLoading, setDailyNameLoading] = useState(true);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>(loaderData?.upcomingEvents?.length ? loaderData.upcomingEvents : []);
+  const [eventsLoading, setEventsLoading] = useState(!loaderData?.upcomingEvents?.length);
+  const [dailyName, setDailyName] = useState<DailyName | null>(loaderData?.dailyName || null);
+  const [dailyNameLoading, setDailyNameLoading] = useState(!loaderData?.dailyName);
   const [muhammadDailyName, setMuhammadDailyName] = useState<DailyName | null>(null);
 
   // Logged-in dashboard state
@@ -179,13 +264,14 @@ export default function Home() {
   const [latestBookmark, setLatestBookmark] = useState<{ surahId: number; verseNumber: number } | null>(null);
 
   // Fetch calendar data (today's date + upcoming events)
+  // Client-side fetch refines with local timezone adjustment (loader uses UTC)
   useEffect(() => {
     // Compute "today" client-side to avoid server UTC clock mismatch
     const localToday = getLocalDateString();
 
     const calendarAdjust = getCalendarAdjust();
 
-    // Get accurate Hijri date by converting the real local date
+    // Always refine Hijri date client-side with timezone-aware conversion
     calendarAPI
       .convertToHijri(localToday, undefined, calendarAdjust)
       .then((res) => {
@@ -215,20 +301,23 @@ export default function Home() {
       })
       .catch(() => {});
 
-    // Upcoming events from API
-    setEventsLoading(true);
-    calendarAPI
-      .getUpcomingEvents(90, undefined, calendarAdjust)
-      .then((res) => {
-        const data = res.data?.data || res.data;
-        const eventsList = Array.isArray(data) ? data : data?.events || [];
-        setUpcomingEvents(eventsList.slice(0, 5));
-      })
-      .catch(() => {})
-      .finally(() => setEventsLoading(false));
+    // Upcoming events — skip if loader already provided data
+    if (!loaderData?.upcomingEvents?.length) {
+      setEventsLoading(true);
+      calendarAPI
+        .getUpcomingEvents(90, undefined, calendarAdjust)
+        .then((res) => {
+          const data = res.data?.data || res.data;
+          const eventsList = Array.isArray(data) ? data : data?.events || [];
+          setUpcomingEvents(eventsList.slice(0, 5));
+        })
+        .catch(() => {})
+        .finally(() => setEventsLoading(false));
+    }
   }, []);
 
   // Asma ul Husna — daily name (with fallback from full list by day of year)
+  // Skip client-side fetch for daily name if loader already provided it
   useEffect(() => {
     const mapApiToDaily = (raw: any): DailyName | null => {
       if (!raw || typeof raw !== "object") return null;
@@ -241,30 +330,32 @@ export default function Home() {
       return { nameArabic, name, transliteration, meaning };
     };
 
-    setDailyNameLoading(true);
-    Promise.allSettled([namesAPI.getDailyName(), namesAPI.getAllNames()])
-      .then(([dailyRes, allRes]) => {
-        if (dailyRes.status === "fulfilled") {
-          const data = dailyRes.value.data?.data ?? dailyRes.value.data;
-          const mapped = mapApiToDaily(data);
-          if (mapped) {
-            setDailyName(mapped);
-            return;
+    if (!loaderData?.dailyName) {
+      setDailyNameLoading(true);
+      Promise.allSettled([namesAPI.getDailyName(), namesAPI.getAllNames()])
+        .then(([dailyRes, allRes]) => {
+          if (dailyRes.status === "fulfilled") {
+            const data = dailyRes.value.data?.data ?? dailyRes.value.data;
+            const mapped = mapApiToDaily(data);
+            if (mapped) {
+              setDailyName(mapped);
+              return;
+            }
           }
-        }
-        const allData = allRes.status === "fulfilled" ? allRes.value.data : null;
-        const list = Array.isArray(allData) ? allData : allData?.data ?? allData?.names ?? [];
-        if (list.length > 0) {
-          const dayOfYear = Math.floor(
-            (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-          );
-          const item = list[dayOfYear % list.length] as Record<string, unknown>;
-          setDailyName(mapApiToDaily(item) ?? null);
-        }
-      })
-      .finally(() => setDailyNameLoading(false));
+          const allData = allRes.status === "fulfilled" ? allRes.value.data : null;
+          const list = Array.isArray(allData) ? allData : allData?.data ?? allData?.names ?? [];
+          if (list.length > 0) {
+            const dayOfYear = Math.floor(
+              (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+            );
+            const item = list[dayOfYear % list.length] as Record<string, unknown>;
+            setDailyName(mapApiToDaily(item) ?? null);
+          }
+        })
+        .finally(() => setDailyNameLoading(false));
+    }
 
-    // Fetch Muhammad daily name
+    // Fetch Muhammad daily name (not in loader — always client-side)
     muhammadNamesAPI.getDailyName()
       .then((res) => {
         const data = res.data?.data ?? res.data;
@@ -446,26 +537,36 @@ export default function Home() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Siraat - Your Spiritual Companion",
+        "description": "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.",
+        "url": "https://siraatt.vercel.app"
+      }} />
       {/* Hero Section */}
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-16 lg:py-20">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left - Greeting */}
             <div className="animate-fade-in-up">
-              <p className="font-amiri text-white/70 text-lg mb-1">{getGreetingArabic()}</p>
+              <p className="font-amiri text-white/80 text-lg mb-1">{getGreetingArabic()}</p>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair tracking-tight mb-3 leading-tight">
                 {getGreeting()}
+                <span className="block text-base sm:text-lg font-medium font-jakarta text-white/80 mt-2">
+                  Siraat — Your Islamic Spiritual Companion
+                </span>
               </h1>
 
               {/* Today's Date Info */}
               <div className="space-y-1 mb-6">
                 {hijriDate && (
-                  <p className="text-white/80 text-sm sm:text-base flex items-center gap-2">
+                  <p className="text-white/90 text-sm sm:text-base flex items-center gap-2">
                     <Calendar size={16} className="text-gold-light" />
                     {hijriDate}
                   </p>
                 )}
-                <p className="text-white/50 text-xs sm:text-sm flex items-center gap-2">
+                <p className="text-white/90 text-xs sm:text-sm flex items-center gap-2">
                   <Calendar size={14} />
                   {new Intl.DateTimeFormat("en-US", {
                     weekday: "long",
@@ -479,18 +580,18 @@ export default function Home() {
               {/* Today's Events */}
               {todayEvents.length > 0 && (
                 <div className="mb-6 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
-                  <p className="text-white/50 text-[10px] uppercase tracking-wider mb-1.5">
+                  <p className="text-white/90 text-[11px] uppercase tracking-wider mb-1.5">
                     Today's Events
                   </p>
                   {todayEvents.map((event: any, i: number) => (
-                    <p key={i} className="text-white/80 text-sm">
+                    <p key={i} className="text-white/90 text-sm">
                       {event.name || event}
                     </p>
                   ))}
                 </div>
               )}
 
-              <p className="text-white/80 text-base sm:text-lg leading-relaxed max-w-lg mb-8">
+              <p className="text-white/90 text-base sm:text-lg leading-relaxed max-w-lg mb-8">
                 Your comprehensive spiritual companion. Track prayers, read Quran, count dhikr, and
                 stay connected to your faith.
               </p>
@@ -518,11 +619,11 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-5">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-white/60 text-xs uppercase tracking-wider font-semibold">
+                      <p className="text-white/90 text-xs uppercase tracking-wider font-semibold">
                         Next Prayer
                       </p>
                       {isPastIsha && (
-                        <span className="text-[10px] bg-white/20 text-white/70 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] bg-white/20 text-white/80 px-2 py-0.5 rounded-full">
                           Tomorrow
                         </span>
                       )}
@@ -538,7 +639,7 @@ export default function Home() {
 
                 {countdown && (
                   <div className="mb-6">
-                    <p className="text-white/50 text-xs mb-2 uppercase tracking-wider">
+                    <p className="text-white/90 text-xs mb-2 uppercase tracking-wider">
                       Countdown
                     </p>
                     <div className="flex gap-2">
@@ -547,7 +648,7 @@ export default function Home() {
                           <span className="text-white text-2xl sm:text-3xl font-bold tabular-nums">
                             {unit}
                           </span>
-                          <p className="text-white/40 text-[10px] uppercase mt-0.5">
+                          <p className="text-white/90 text-[11px] uppercase mt-0.5">
                             {["hrs", "min", "sec"][i]}
                           </p>
                         </div>
@@ -579,8 +680,8 @@ export default function Home() {
                             isNext
                               ? "bg-white/15 text-white font-semibold"
                               : isPassed
-                              ? "text-white/30"
-                              : "text-white/60"
+                              ? "text-white/80"
+                              : "text-white/90"
                           }`}
                         >
                           <span>{name}</span>
@@ -592,13 +693,13 @@ export default function Home() {
                 )}
 
                 <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center gap-1.5 text-white/40 text-xs">
+                  <div className="flex items-center gap-1.5 text-white/90 text-xs">
                     <MapPin size={12} />
                     {locationName}
                   </div>
                   <Link
                     to="/prayers"
-                    className="text-xs text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+                    className="text-xs text-white/90 hover:text-white flex items-center gap-1 transition-colors"
                   >
                     View all <ChevronRight size={12} />
                   </Link>
@@ -673,7 +774,7 @@ export default function Home() {
                 {/* Streak header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-1">
+                    <p className="text-[11px] uppercase tracking-wider text-text-muted font-semibold mb-1">
                       Prayer Streak
                     </p>
                     <div className="flex items-baseline gap-1">
@@ -689,10 +790,10 @@ export default function Home() {
                 {/* Today's prayers */}
                 <div className="border-t border-border-light pt-3">
                   <div className="flex items-center justify-between mb-2.5">
-                    <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold">
+                    <p className="text-[11px] uppercase tracking-wider text-text-muted font-semibold">
                       Today
                     </p>
-                    <p className="text-[10px] text-text-muted tabular-nums">
+                    <p className="text-[11px] text-text-muted tabular-nums">
                       {Object.keys(todayPrayerLogs).length}/5 prayed
                     </p>
                   </div>
@@ -716,7 +817,7 @@ export default function Home() {
                               "bg-border-light"
                             }`}
                           />
-                          <span className={`text-[9px] font-medium truncate w-full text-center ${logged ? "text-text-secondary" : "text-text-muted"}`}>
+                          <span className={`text-[11px] font-medium truncate w-full text-center ${logged ? "text-text-secondary" : "text-text-muted"}`}>
                             {label}
                           </span>
                         </div>
@@ -863,12 +964,12 @@ export default function Home() {
                         )}
                         <div className="flex items-center justify-between mt-1.5">
                           {(evt.hijriDay || evt.hijriMonth) && (
-                            <p className="text-[10px] text-text-muted">
+                            <p className="text-[11px] text-text-muted">
                               {evt.hijriDay} {evt.hijriMonth}
                             </p>
                           )}
                           {daysUntil !== undefined && (
-                            <p className="text-[10px] text-primary font-medium">
+                            <p className="text-[11px] text-primary font-medium">
                               {daysUntil === 0 ? "Today" : `In ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
                             </p>
                           )}
@@ -956,6 +1057,24 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Why Siraat */}
+      <section className="container-faith py-10 md:py-14">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="font-playfair text-2xl md:text-3xl font-bold text-text mb-6">Your Complete Islamic Companion</h2>
+          <div className="space-y-4">
+            <p className="text-text-secondary leading-relaxed">
+              Siraat is a free, ad-free, and privacy-respecting Islamic companion built for the global Muslim Ummah. Whether you are observing your five daily prayers at home, reading Quran during your commute, or counting dhikr before bed, Siraat brings every essential tool together in one place so you can focus entirely on your worship without distractions or interruptions.
+            </p>
+            <p className="text-text-secondary leading-relaxed">
+              Accuracy matters when it comes to acts of worship. Siraat calculates prayer times using internationally recognized methods including the Islamic Society of North America (ISNA), the Muslim World League (MWL), and the Egyptian General Authority of Survey, ensuring reliable schedules no matter where you are. The built-in Quran reader features the trusted Saheeh International English translation alongside clear Arabic script, while the Islamic calendar provides precise Hijri date conversion so you never miss the start of Ramadan, Eid, or any significant occasion.
+            </p>
+            <p className="text-text-secondary leading-relaxed">
+              Beyond the essentials, Siraat offers a comprehensive dhikr counter with customizable goals and progress tracking, a Qibla finder that works from anywhere in the world using your device compass, and a curated collection of daily duas and Names of Allah to deepen your connection with your faith. Every feature is designed with simplicity and sincerity, giving Muslims of all ages and backgrounds a dependable companion on the path to spiritual growth.
+            </p>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }
@@ -994,7 +1113,7 @@ function DailyNameCard({
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mb-2">
+        <p className="text-[11px] uppercase tracking-wider text-text-muted font-semibold mb-2">
           {label}
         </p>
         {loading ? (

@@ -3,8 +3,6 @@
  * Inspired by Co-Star Astrology & Islamestic
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-
 @import "tailwindcss";
 
 @theme {
@@ -35,7 +33,7 @@
   /* Text */
   --color-text: #1A1D23;
   --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  --color-text-muted: #6B7280;
   --color-text-inverse: #FFFFFF;
 
   /* Borders */
@@ -693,5 +691,21 @@ body {
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .animate-fade-in-up,
+  .stagger-children > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  html {
+    scroll-behavior: auto !important;
   }
 }

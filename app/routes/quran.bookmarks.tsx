@@ -1,17 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import type { Route } from "./+types/quran.bookmarks";
 import { Bookmark, Loader2, BookOpen, ArrowLeft, Calendar, Trash2 } from "lucide-react";
 import { quranAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import type { Bookmark as BookmarkType } from "~/types";
-
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "My Bookmarks - Siraat" },
-    { name: "description", content: "Your saved Quran verses." },
-  ];
-}
 
 export default function QuranBookmarksPage() {
   const [bookmarks, setBookmarks] = useState<BookmarkType[]>([]);
@@ -71,7 +63,7 @@ export default function QuranBookmarksPage() {
           <div className="animate-fade-in-up">
             <Link
               to="/quran"
-              className="inline-flex items-center gap-1.5 text-white/60 hover:text-white text-sm mb-5 transition-colors"
+              className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm mb-5 transition-colors"
             >
               <ArrowLeft size={15} />
               Back to Quran
@@ -82,7 +74,7 @@ export default function QuranBookmarksPage() {
                 My Bookmarks
               </h1>
             </div>
-            <p className="text-white/60 text-sm">
+            <p className="text-white/80 text-sm">
               Your saved Quran verses
             </p>
           </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router';
+import { Link, useLoaderData } from 'react-router';
+import type { LoaderFunctionArgs } from 'react-router';
 import {
   Plus,
   RotateCcw,
@@ -16,6 +17,19 @@ import {
 import { dhikrAPI } from '~/services/api';
 import { useAuth } from '~/contexts/AuthContext';
 import type { DhikrCounter, DhikrGoal, DhikrStats, DhikrHistoryEntry, DhikrPhrase } from '~/types';
+import { JsonLd } from '~/components/JsonLd';
+
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/islam/dhikr/phrases`);
+    if (!res.ok) return { phrases: [] };
+    const json = await res.json();
+    return { phrases: json.data || json };
+  } catch {
+    return { phrases: [] };
+  }
+}
 
 const PRESET_DHIKR = [
   { name: 'SubhanAllah', arabic: 'سُبْحَانَ اللَّهِ', phrase: 'SubhanAllah', target: 33 },
@@ -32,6 +46,7 @@ const PRESET_DHIKR = [
 
 export default function DhikrPage() {
   const { user } = useAuth();
+  const { phrases: loaderPhrases } = useLoaderData<typeof loader>();
   const [counters, setCounters] = useState<DhikrCounter[]>([]);
   const [active, setActive] = useState<DhikrCounter | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +63,7 @@ export default function DhikrPage() {
   const [goals, setGoals] = useState<DhikrGoal[]>([]);
   const [history, setHistory] = useState<DhikrHistoryEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'goals' | 'stats' | 'history'>('goals');
-  const [phrases, setPhrases] = useState<DhikrPhrase[]>([]);
+  const [phrases, setPhrases] = useState<DhikrPhrase[]>(loaderPhrases || []);
   const [phrasesLoading, setPhrasesLoading] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
 
@@ -97,7 +112,7 @@ export default function DhikrPage() {
   }, [fetchAll]);
 
   useEffect(() => {
-    if (showCreate && user && phrases.length === 0) {
+    if (showCreate && user && phrases.length === 0 && !loaderPhrases?.length) {
       setPhrasesLoading(true);
       dhikrAPI
         .getPhrases()
@@ -208,10 +223,34 @@ export default function DhikrPage() {
   const dashOffset = circumference - (progress / 100) * circumference;
   const isComplete = localCount >= target;
 
-  if (!user) return <GuestDhikr />;
+  if (!user) return (
+    <>
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Siraat Dhikr Counter",
+        "description": "Track your daily dhikr with customizable counters, goals, and streaks.",
+        "url": "https://siraatt.vercel.app/dhikr",
+        "applicationCategory": "ReligiousApp",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }} />
+      <GuestDhikr />
+    </>
+  );
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Siraat Dhikr Counter",
+        "description": "Track your daily dhikr with customizable counters, goals, and streaks.",
+        "url": "https://siraatt.vercel.app/dhikr",
+        "applicationCategory": "ReligiousApp",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }} />
       {/* Hero */}
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-16">
@@ -222,22 +261,22 @@ export default function DhikrPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair tracking-tight mb-3">
                 Dhikr Counter
               </h1>
-              <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-md mb-6">
+              <p className="text-white/90 text-sm sm:text-base leading-relaxed max-w-md mb-6">
                 Remember Allah with every breath. Track your daily remembrance, set goals, and build
                 a consistent practice.
               </p>
 
               {/* Quick stat badges */}
               <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/70 text-xs font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium">
                   <Moon size={12} className="text-gold-light" />
                   {stats?.totalCount || 0} total
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/70 text-xs font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium">
                   <Flame size={12} className="text-amber-400" />
                   {stats?.currentStreak || 0} day streak
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/70 text-xs font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium">
                   <Target size={12} className="text-emerald-300" />
                   {counters.length} counter{counters.length !== 1 ? 's' : ''}
                 </span>
@@ -248,12 +287,12 @@ export default function DhikrPage() {
             <div className="animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
               {active ? (
                 <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-white/15">
-                  <p className="text-white/50 text-[10px] uppercase tracking-wider font-semibold mb-1">
+                  <p className="text-white/90 text-[11px] uppercase tracking-wider font-semibold mb-1">
                     Active Counter
                   </p>
                   <p className="text-white text-sm font-semibold mb-1">{active.name}</p>
                   {(active.phraseArabic || active.phraseEnglish) && (
-                    <p className="font-amiri text-xl sm:text-2xl text-white/80 mb-4" dir="rtl">
+                    <p className="font-amiri text-xl sm:text-2xl text-white/90 mb-4" dir="rtl">
                       {active.phraseArabic || active.phraseEnglish}
                     </p>
                   )}
@@ -290,18 +329,18 @@ export default function DhikrPage() {
                         className={`text-5xl sm:text-6xl font-bold text-white tabular-nums ${pulse ? 'animate-count-pulse' : ''}`}>
                         {localCount}
                       </span>
-                      <span className="text-[11px] text-white/40 mt-0.5">of {target}</span>
+                      <span className="text-[11px] text-white/90 mt-0.5">of {target}</span>
                     </button>
                   </div>
 
-                  <p className="text-white/40 text-xs text-center mb-4">
+                  <p className="text-white/90 text-xs text-center mb-4">
                     Tap the counter to increment
                   </p>
 
                   <div className="flex items-center justify-center gap-3">
                     <button
                       onClick={handleReset}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white/60 hover:bg-white/15 text-xs font-medium transition-colors">
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 text-white/90 hover:bg-white/15 text-xs font-medium transition-colors">
                       <RotateCcw size={13} />
                       Reset
                     </button>
@@ -335,8 +374,8 @@ export default function DhikrPage() {
                 </div>
               ) : (
                 <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 border border-white/15 text-center">
-                  <Moon size={36} className="text-white/30 mx-auto mb-3" />
-                  <p className="text-white/60 text-sm mb-4">No counter selected</p>
+                  <Moon size={36} className="text-white/80 mx-auto mb-3" />
+                  <p className="text-white/90 text-sm mb-4">No counter selected</p>
                   <button
                     onClick={() => setShowCreate(true)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/15 text-white text-sm font-semibold hover:bg-white/20 transition-colors">
@@ -424,7 +463,7 @@ export default function DhikrPage() {
                               {counter.name}
                             </h3>
                             {isDone && (
-                              <span className="badge badge-gold text-[10px]">Complete</span>
+                              <span className="badge badge-gold text-[11px]">Complete</span>
                             )}
                           </div>
                           {counter.phraseArabic && (
@@ -543,7 +582,7 @@ export default function DhikrPage() {
                       {p.arabic}
                     </p>
                     <p className="text-sm font-semibold text-text">{p.transliteration}</p>
-                    <p className="text-[10px] text-text-muted mt-1 flex items-center gap-1">
+                    <p className="text-[11px] text-text-muted mt-1 flex items-center gap-1">
                       <Target size={10} /> {target}x
                     </p>
                   </button>
@@ -559,7 +598,7 @@ export default function DhikrPage() {
                     {p.arabic}
                   </p>
                   <p className="text-sm font-semibold text-text">{p.name}</p>
-                  <p className="text-[10px] text-text-muted mt-1 flex items-center gap-1">
+                  <p className="text-[11px] text-text-muted mt-1 flex items-center gap-1">
                     <Target size={10} /> {p.target}x
                   </p>
                 </button>
@@ -1038,7 +1077,7 @@ function GuestDhikr() {
         <div className="container-faith py-10 md:py-14 text-center">
           <Moon size={28} className="text-gold-light mx-auto mb-4" />
           <h1 className="text-3xl sm:text-4xl font-bold font-playfair mb-2">Dhikr Counter</h1>
-          <p className="text-white/60 text-sm">Remember Allah with every breath</p>
+          <p className="text-white/90 text-sm">Remember Allah with every breath</p>
         </div>
       </section>
 
@@ -1123,6 +1162,19 @@ function GuestDhikr() {
               Session total: {sessionTotal} recitations
             </p>
           )}
+        </div>
+
+        {/* Educational Introduction */}
+        <div className="card-elevated p-6 md:p-8 mt-6">
+          <h2 className="font-playfair text-xl md:text-2xl font-bold text-text mb-4">What Is Dhikr? The Practice of Remembering Allah</h2>
+          <div className="space-y-3">
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Dhikr (also spelled zikr or thikr) is the Islamic practice of remembering and glorifying Allah through the repetition of sacred phrases, supplications, and divine names. Rooted in the Quran's instruction "Remember Me, and I will remember you" (2:152), dhikr is considered one of the most beloved acts of worship in Islam. It can be performed at any time and in any place, making it an accessible and deeply personal form of devotion for Muslims around the world.
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Common dhikr phrases include SubhanAllah ("Glory be to Allah"), Alhamdulillah ("All praise is due to Allah"), Allahu Akbar ("Allah is the Greatest"), La ilaha illallah ("There is no deity except Allah"), and Astaghfirullah ("I seek forgiveness from Allah"). The Prophet Muhammad (peace be upon him) recommended reciting these phrases regularly, often in sets of 33 or 100. Consistent dhikr practice brings spiritual tranquility, strengthens one's connection with Allah, purifies the heart, and serves as a source of protection and inner peace throughout the day.
+            </p>
+          </div>
         </div>
 
         {/* Sign in CTA */}

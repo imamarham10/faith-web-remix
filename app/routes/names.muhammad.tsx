@@ -1,19 +1,9 @@
 import { useState, useEffect } from "react";
-import type { Route } from "./+types/names.muhammad";
 import { Sparkles, Heart, Loader2, Star, Search } from "lucide-react";
+import { useLoaderData } from "react-router";
 import { muhammadNamesAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
-
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "99 Names of the Prophet ﷺ - Siraat" },
-    {
-      name: "description",
-      content:
-        "Explore and reflect upon the 99 Names of the Prophet Muhammad ﷺ with Arabic text, transliterations, and meanings.",
-    },
-  ];
-}
+import { JsonLd } from "~/components/JsonLd";
 
 /** API response shape from /api/v1/islam/names/muhammad */
 interface MuhammadNameAPI {
@@ -48,15 +38,71 @@ function mapApiNameToUi(api: MuhammadNameAPI, index: number): MuhammadName {
   };
 }
 
+function parseDailyName(data: unknown): MuhammadName | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  const name = (d.name ?? d.nameEnglish) as string | undefined;
+  const nameArabic = (d.nameArabic ?? d.name_arabic) as string | undefined;
+  const transliteration = (d.transliteration ?? d.nameTranslit ?? d.name_translit) as string | undefined;
+  const meaning = d.meaning as string | undefined;
+  if (!(name ?? nameArabic)) return null;
+  return {
+    id: (d.id as number) ?? 0,
+    number: (d.number as number) ?? 0,
+    name: name ?? (d.nameEnglish as string) ?? "",
+    nameArabic: nameArabic ?? "",
+    transliteration: transliteration ?? "",
+    meaning: meaning ?? "",
+  };
+}
+
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const [namesRes, dailyRes] = await Promise.allSettled([
+    fetch(`${API_BASE}/api/v1/islam/names/muhammad`),
+    fetch(`${API_BASE}/api/v1/islam/names/muhammad/daily`),
+  ]);
+
+  let names: MuhammadName[] = [];
+  let dailyName: MuhammadName | null = null;
+
+  if (namesRes.status === "fulfilled" && namesRes.value.ok) {
+    const json = await namesRes.value.json();
+    const raw = json.data ?? json;
+    const arr = Array.isArray(raw) ? raw : raw?.names ?? [];
+    names = (arr as MuhammadNameAPI[]).map((n, i) => mapApiNameToUi(n, i));
+  }
+
+  if (dailyRes.status === "fulfilled" && dailyRes.value.ok) {
+    const json = await dailyRes.value.json();
+    const raw = json.data ?? json;
+    dailyName = parseDailyName(raw);
+  }
+
+  // Fallback: pick a name from the list by day of year
+  if (!dailyName && names.length > 0) {
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+    );
+    dailyName = names[dayOfYear % names.length];
+  }
+
+  return { names, dailyName };
+}
+
 export default function MuhammadNamesPage() {
-  const [names, setNames] = useState<MuhammadName[]>([]);
-  const [dailyName, setDailyName] = useState<MuhammadName | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loaderData = useLoaderData<typeof loader>();
+  const [names, setNames] = useState<MuhammadName[]>(loaderData.names);
+  const [dailyName, setDailyName] = useState<MuhammadName | null>(loaderData.dailyName);
+  const [loading, setLoading] = useState(loaderData.names.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const { isAuthenticated } = useAuth();
 
+  // Client-side fallback: only fetch if loader returned empty data
   useEffect(() => {
+    if (names.length > 0) return;
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -78,25 +124,10 @@ export default function MuhammadNamesPage() {
         if (dailyRes.status === "fulfilled") {
           const raw = dailyRes.value.data;
           const data = raw?.data ?? raw;
-          if (data && typeof data === "object") {
-            const d = data as Record<string, unknown>;
-            const name = (d.name ?? d.nameEnglish) as string | undefined;
-            const nameArabic = (d.nameArabic ?? d.name_arabic) as string | undefined;
-            const transliteration = (d.transliteration ?? d.nameTranslit ?? d.name_translit) as
-              | string
-              | undefined;
-            const meaning = d.meaning as string | undefined;
-            if (name ?? nameArabic) {
-              setDailyName({
-                id: (d.id as number) ?? 0,
-                number: (d.number as number) ?? 0,
-                name: name ?? (d.nameEnglish as string) ?? "",
-                nameArabic: nameArabic ?? "",
-                transliteration: transliteration ?? "",
-                meaning: meaning ?? "",
-              });
-              dailySet = true;
-            }
+          const parsed = parseDailyName(data);
+          if (parsed) {
+            setDailyName(parsed);
+            dailySet = true;
           }
         }
 
@@ -120,7 +151,7 @@ export default function MuhammadNamesPage() {
   const handleFavorite = async (name: MuhammadName) => {
     if (!isAuthenticated) return;
 
-    // Optimistic UI — toggle immediately
+    // Optimistic UI -- toggle immediately
     setFavorites((prev) => {
       const next = new Set(prev);
       if (next.has(name.id)) {
@@ -157,6 +188,23 @@ export default function MuhammadNamesPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "99 Names of Prophet Muhammad (SAW)",
+        "description": "Explore the 99 beautiful names of Prophet Muhammad with Arabic text, transliteration, and meanings.",
+        "url": "https://siraatt.vercel.app/names/muhammad",
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": 99,
+          "name": "99 Names of Prophet Muhammad",
+          "itemListElement": names.slice(0, 99).map((n: MuhammadName, i: number) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "name": `${n.name} (${n.nameArabic})`
+          }))
+        }
+      }} />
       {/* Hero */}
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-14">
@@ -166,8 +214,8 @@ export default function MuhammadNamesPage() {
               <h1 className="text-3xl sm:text-4xl font-bold font-playfair mb-2">
                 99 Names of the Prophet ﷺ
               </h1>
-              <p className="text-white/60 text-sm">
-                Learn and reflect upon the beautiful names of the Prophet Muhammad ﷺ
+              <p className="text-white/90 text-sm">
+                Learn and reflect upon the beautiful names and attributes of the Prophet Muhammad ﷺ, each reflecting an aspect of his noble character
               </p>
             </div>
 
@@ -175,7 +223,7 @@ export default function MuhammadNamesPage() {
             {dailyName && (
               <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                 <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/15">
-                  <p className="text-white/50 text-xs uppercase tracking-wider mb-3">
+                  <p className="text-white/90 text-xs uppercase tracking-wider mb-3">
                     Today's Name
                   </p>
                   <div className="space-y-3">
@@ -184,10 +232,10 @@ export default function MuhammadNamesPage() {
                         {dailyName.nameArabic}
                       </p>
                       <p className="text-xl font-bold text-white">{dailyName.name}</p>
-                      <p className="text-sm text-white/70 mt-1">{dailyName.transliteration}</p>
+                      <p className="text-sm text-white/80 mt-1">{dailyName.transliteration}</p>
                     </div>
                     <div className="pt-3 border-t border-white/10">
-                      <p className="text-white/60 text-xs mb-1">Meaning</p>
+                      <p className="text-white/90 text-xs mb-1">Meaning</p>
                       <p className="text-white/90 text-sm">{dailyName.meaning}</p>
                     </div>
                   </div>
@@ -198,7 +246,40 @@ export default function MuhammadNamesPage() {
         </div>
       </section>
 
-      <div className="container-faith py-8 md:py-12">
+      {/* Educational Intro */}
+      <div className="container-faith pt-8 md:pt-12">
+        <div className="max-w-3xl mx-auto mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold font-playfair text-text mb-4">
+            The Beautiful Names and Titles of Prophet Muhammad ﷺ
+          </h2>
+          <div className="prose prose-sm text-text-secondary space-y-3 leading-relaxed">
+            <p>
+              Throughout Islamic tradition, Prophet Muhammad (peace be upon him) has been known by many
+              names and honorific titles, each describing a quality of his noble character or a role
+              he fulfilled in conveying the divine message. These names appear in the Quran, the hadith
+              collections of Sahih al-Bukhari and Sahih Muslim, and the works of classical scholars
+              such as Imam al-Jazuli in his renowned <em>Dala'il al-Khayrat</em>.
+            </p>
+            <p>
+              Among the most well-known are <strong>Muhammad</strong> (the Praised One), <strong>Ahmad</strong> (the
+              Most Commendable), <strong>Al-Mustafa</strong> (the Chosen), <strong>Ar-Rasul</strong> (the
+              Messenger), and <strong>Al-Amin</strong> (the Trustworthy). The Quran itself uses several
+              names: "And remember when Jesus, son of Mary, said, 'O Children of Israel, I am the
+              messenger of Allah to you, confirming what came before me of the Torah and bringing good
+              tidings of a messenger to come after me, whose name is Ahmad'" (Quran 61:6).
+            </p>
+            <p>
+              Scholars have traditionally compiled these names to help Muslims deepen their love and
+              understanding of the Prophet's multifaceted character. Reflecting on these names is considered
+              a form of sending salawat (blessings) upon the Prophet, which the Quran encourages in
+              Surah Al-Ahzab (33:56): "Indeed, Allah and His angels send blessings upon the Prophet.
+              O you who believe, send blessings upon him and greet him with peace."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container-faith pb-8 md:pb-12">
         {/* Search */}
         <div className="mb-8">
           <div className="relative max-w-md">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useParams, useSearchParams, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   ArrowLeft,
   Bookmark,
@@ -14,13 +15,57 @@ import {
 import { quranAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import type { Surah, Verse } from "~/types";
+import { JsonLd } from "~/components/JsonLd";
+
+export async function loader({ params }: LoaderFunctionArgs) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const id = params.surahId;
+  if (!id) return { surah: null, verses: [] };
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/islam/quran/surah/${id}`);
+    if (!res.ok) return { surah: null, verses: [] };
+    const json = await res.json();
+    const data = json.data || json;
+    if (!data) return { surah: null, verses: [] };
+
+    const surah: Surah = {
+      id: data.id || Number(id),
+      name: data.name,
+      nameArabic: data.nameArabic || data.name_arabic,
+      nameTransliteration: data.nameTransliteration || data.name_transliteration || data.name,
+      revelationPlace: data.revelationPlace || data.revelation_place,
+      versesCount: data.versesCount || data.verses_count || data.verses?.length || 0,
+    };
+
+    const rawVerses: any[] = data.verses || [];
+    const verses: Verse[] = rawVerses.map((v: any) => {
+      let translation = v.textTranslation || v.text_translation || "";
+      if (!translation && v.translations?.length > 0) {
+        translation = v.translations[0].text || "";
+      }
+      return {
+        id: v.id,
+        surahId: v.surahId || v.surah_id || Number(id),
+        verseNumber: v.verseNumber || v.verse_number || v.id,
+        textArabic: v.textArabic || v.text_arabic || "",
+        textTranslation: translation,
+        textTransliteration: v.textTransliteration || v.text_transliteration,
+      };
+    });
+
+    return { surah, verses };
+  } catch {
+    return { surah: null, verses: [] };
+  }
+}
 
 export default function SurahDetailPage() {
   const { surahId } = useParams();
   const { user } = useAuth();
-  const [surah, setSurah] = useState<Surah | null>(null);
-  const [verses, setVerses] = useState<Verse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loaderData = useLoaderData<typeof loader>();
+  const [surah, setSurah] = useState<Surah | null>(loaderData?.surah || null);
+  const [verses, setVerses] = useState<Verse[]>(loaderData?.verses || []);
+  const [loading, setLoading] = useState(loaderData?.surah ? false : true);
   const [copiedVerse, setCopiedVerse] = useState<number | null>(null);
   const [bookmarkedVerse, setBookmarkedVerse] = useState<number | null>(null);
   const [showBookmarkToast, setShowBookmarkToast] = useState(false);
@@ -29,6 +74,7 @@ export default function SurahDetailPage() {
 
   useEffect(() => {
     if (!surahId) return;
+    if (loaderData?.surah && String(loaderData.surah.id) === surahId) return;
     setLoading(true);
     quranAPI
       .getSurah(Number(surahId))
@@ -116,6 +162,22 @@ export default function SurahDetailPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      {surah && (
+        <JsonLd data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": `Surah ${surah.nameTransliteration || surah.name} - ${surah.nameArabic || surah.name}`,
+          "description": `Read Surah ${surah.nameTransliteration || surah.name} (${surah.nameArabic || surah.name}) with Arabic text and English translation. ${surah.versesCount} Ayahs${surah.revelationPlace ? `, revealed in ${surah.revelationPlace}` : ""}.`,
+          "url": `https://siraatt.vercel.app/quran/${surah.id}`,
+          "inLanguage": ["en", "ar"],
+          "image": "https://siraatt.vercel.app/og-image.png",
+          "datePublished": "2026-02-01",
+          "dateModified": new Date().toISOString().split("T")[0],
+          "mainEntityOfPage": `https://siraatt.vercel.app/quran/${surah.id}`,
+          "author": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app" },
+          "publisher": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app", "logo": { "@type": "ImageObject", "url": "https://siraatt.vercel.app/og-image.png" } }
+        }} />
+      )}
       {/* Bookmark toast */}
       <div
         className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 bg-text text-white rounded-xl shadow-lg text-sm font-medium transition-all duration-300 ${
@@ -133,7 +195,7 @@ export default function SurahDetailPage() {
         <div className="container-faith py-8 md:py-12">
           <Link
             to="/quran"
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white text-sm mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-white/90 hover:text-white text-sm mb-6 transition-colors"
           >
             <ArrowLeft size={16} />
             All Surahs
@@ -153,10 +215,10 @@ export default function SurahDetailPage() {
               <h1 className="text-3xl sm:text-4xl font-bold font-playfair mb-2">
                 {surah.nameTransliteration}
               </h1>
-              <p className="font-amiri text-2xl sm:text-3xl text-white/70 mb-3">
+              <p className="font-amiri text-2xl sm:text-3xl text-white/80 mb-3">
                 {surah.nameArabic}
               </p>
-              <div className="flex items-center justify-center gap-4 text-white/50 text-sm">
+              <div className="flex items-center justify-center gap-4 text-white/90 text-sm">
                 <span>{surah.versesCount} Ayahs</span>
                 {surah.revelationPlace && (
                   <>

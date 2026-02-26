@@ -44,14 +44,14 @@ export default function Footer() {
             <h3 className="font-playfair text-2xl md:text-3xl font-semibold mb-3 text-white/95">
               Begin Your Spiritual Journey
             </h3>
-            <p className="text-white/50 text-sm max-w-md mx-auto mb-6 leading-relaxed">
+            <p className="text-white/75 text-sm max-w-md mx-auto mb-6 leading-relaxed">
               Create a free account to sync your progress, save bookmarks, and
               personalize your experience.
             </p>
             <div className="flex items-center justify-center gap-3">
               <Link
                 to="/auth/register"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 text-white text-sm font-semibold hover:bg-white/15 transition-all duration-300"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 text-white text-sm font-semibold hover:bg-white/15 transition-all duration-300"
               >
                 Get Started Free
                 <ArrowRight size={15} />
@@ -77,7 +77,7 @@ export default function Footer() {
               to="/"
               className="inline-flex items-center gap-2.5 mb-5 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center group-hover:border-gold/30 transition-colors duration-300">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 flex items-center justify-center group-hover:border-gold/30 transition-colors duration-300">
                 <span className="text-white text-lg">&#9789;</span>
               </div>
               <div>
@@ -89,7 +89,7 @@ export default function Footer() {
                 </span>
               </div>
             </Link>
-            <p className="text-[0.8125rem] text-white/40 leading-relaxed max-w-xs">
+            <p className="text-[0.8125rem] text-white/70 leading-relaxed max-w-xs">
               Your comprehensive spiritual companion. Access prayer times,
               Quran, dhikr tracking, and more — all in one beautiful platform.
             </p>
@@ -107,12 +107,12 @@ export default function Footer() {
                   <li key={link.to}>
                     <Link
                       to={link.to}
-                      className="inline-flex items-center gap-2 text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-200 group"
+                      className="inline-flex items-center gap-2 text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200 group"
                     >
                       <Icon
                         size={14}
                         strokeWidth={1.6}
-                        className="text-white/30 group-hover:text-gold/70 transition-colors duration-200"
+                        className="text-white/60 group-hover:text-gold/70 transition-colors duration-200"
                       />
                       {link.label}
                     </Link>
@@ -131,7 +131,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/"
-                  className="text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-200"
+                  className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
                 >
                   Home
                 </Link>
@@ -141,7 +141,7 @@ export default function Footer() {
                   <li>
                     <Link
                       to="/auth/login"
-                      className="text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-200"
+                      className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
                     >
                       Sign In
                     </Link>
@@ -149,7 +149,7 @@ export default function Footer() {
                   <li>
                     <Link
                       to="/auth/register"
-                      className="text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-200"
+                      className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
                     >
                       Create Account
                     </Link>
@@ -159,23 +159,55 @@ export default function Footer() {
                 <li>
                   <Link
                     to="/prayers"
-                    className="text-[0.8125rem] text-white/50 hover:text-white transition-colors duration-200"
+                    className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
                   >
                     My Dashboard
                   </Link>
                 </li>
               )}
+              <li>
+                <Link
+                  to="/about"
+                  className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
+                >
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/privacy"
+                  className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
+                >
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/terms"
+                  className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
+                >
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contact"
+                  className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
+                >
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-14 pt-6 border-t border-white/[0.06]">
+        <div className="mt-14 pt-6 border-t border-white/10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-[0.6875rem] text-white/25 tracking-wide">
+            <p className="text-[0.6875rem] text-white/60 tracking-wide">
               &copy; {new Date().getFullYear()} All rights reserved.
             </p>
-            <p className="text-[0.6875rem] text-white/25 tracking-wide flex items-center gap-1.5">
+            <p className="text-[0.6875rem] text-white/60 tracking-wide flex items-center gap-1.5">
               Made with{" "}
               <Heart size={10} className="text-gold/60 fill-gold/60" /> for the
               Ummah

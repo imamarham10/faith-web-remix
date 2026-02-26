@@ -1,12 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { Search, BookOpen, Loader2, MapPin, ChevronRight, Bookmark } from "lucide-react";
 import { quranAPI } from "~/services/api";
 import type { Surah } from "~/types";
+import { JsonLd } from "~/components/JsonLd";
+
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/islam/quran/surahs`);
+    if (!res.ok) return { surahs: [] };
+    const json = await res.json();
+    return { surahs: json.data || json };
+  } catch {
+    return { surahs: [] };
+  }
+}
 
 export default function QuranPage() {
-  const [surahs, setSurahs] = useState<Surah[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { surahs: loaderSurahs } = useLoaderData<typeof loader>();
+  const [surahs, setSurahs] = useState<Surah[]>(loaderSurahs || []);
+  const [loading, setLoading] = useState(loaderSurahs?.length > 0 ? false : true);
   const [search, setSearch] = useState("");
   const [searchMode, setSearchMode] = useState<"surahs" | "verses">("surahs");
   const [verseQuery, setVerseQuery] = useState("");
@@ -44,6 +59,7 @@ export default function QuranPage() {
   }, []);
 
   useEffect(() => {
+    if (loaderSurahs?.length > 0) return;
     quranAPI
       .getSurahs()
       .then((res) => {
@@ -63,6 +79,40 @@ export default function QuranPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "The Noble Quran - All 114 Surahs",
+        "description": "Read the Holy Quran with Arabic text, English translation, and transliteration. Browse all 114 Surahs.",
+        "url": "https://siraatt.vercel.app/quran",
+        "mainEntity": {
+          "@type": "ItemList",
+          "name": "114 Surahs of the Holy Quran",
+          "numberOfItems": 114,
+          "itemListElement": Array.from({ length: 114 }, (_, i) => {
+            const surahNames: Record<number, string> = {
+              1:"Al-Fatihah",2:"Al-Baqarah",3:"Ali 'Imran",4:"An-Nisa",5:"Al-Ma'idah",6:"Al-An'am",7:"Al-A'raf",8:"Al-Anfal",9:"At-Tawbah",10:"Yunus",
+              11:"Hud",12:"Yusuf",13:"Ar-Ra'd",14:"Ibrahim",15:"Al-Hijr",16:"An-Nahl",17:"Al-Isra",18:"Al-Kahf",19:"Maryam",20:"Taha",
+              21:"Al-Anbiya",22:"Al-Hajj",23:"Al-Mu'minun",24:"An-Nur",25:"Al-Furqan",26:"Ash-Shu'ara",27:"An-Naml",28:"Al-Qasas",29:"Al-'Ankabut",30:"Ar-Rum",
+              31:"Luqman",32:"As-Sajdah",33:"Al-Ahzab",34:"Saba",35:"Fatir",36:"Ya-Sin",37:"As-Saffat",38:"Sad",39:"Az-Zumar",40:"Ghafir",
+              41:"Fussilat",42:"Ash-Shura",43:"Az-Zukhruf",44:"Ad-Dukhan",45:"Al-Jathiyah",46:"Al-Ahqaf",47:"Muhammad",48:"Al-Fath",49:"Al-Hujurat",50:"Qaf",
+              51:"Adh-Dhariyat",52:"At-Tur",53:"An-Najm",54:"Al-Qamar",55:"Ar-Rahman",56:"Al-Waqi'ah",57:"Al-Hadid",58:"Al-Mujadila",59:"Al-Hashr",60:"Al-Mumtahanah",
+              61:"As-Saff",62:"Al-Jumu'ah",63:"Al-Munafiqun",64:"At-Taghabun",65:"At-Talaq",66:"At-Tahrim",67:"Al-Mulk",68:"Al-Qalam",69:"Al-Haqqah",70:"Al-Ma'arij",
+              71:"Nuh",72:"Al-Jinn",73:"Al-Muzzammil",74:"Al-Muddaththir",75:"Al-Qiyamah",76:"Al-Insan",77:"Al-Mursalat",78:"An-Naba",79:"An-Nazi'at",80:"'Abasa",
+              81:"At-Takwir",82:"Al-Infitar",83:"Al-Mutaffifin",84:"Al-Inshiqaq",85:"Al-Buruj",86:"At-Tariq",87:"Al-A'la",88:"Al-Ghashiyah",89:"Al-Fajr",90:"Al-Balad",
+              91:"Ash-Shams",92:"Al-Layl",93:"Ad-Duhaa",94:"Ash-Sharh",95:"At-Tin",96:"Al-'Alaq",97:"Al-Qadr",98:"Al-Bayyinah",99:"Az-Zalzalah",100:"Al-'Adiyat",
+              101:"Al-Qari'ah",102:"At-Takathur",103:"Al-'Asr",104:"Al-Humazah",105:"Al-Fil",106:"Quraysh",107:"Al-Ma'un",108:"Al-Kawthar",109:"Al-Kafirun",110:"An-Nasr",
+              111:"Al-Masad",112:"Al-Ikhlas",113:"Al-Falaq",114:"An-Nas"
+            };
+            return {
+              "@type": "ListItem",
+              "position": i + 1,
+              "name": `Surah ${surahNames[i + 1] || i + 1}`,
+              "url": `https://siraatt.vercel.app/quran/${i + 1}`
+            };
+          })
+        }
+      }} />
       {/* Hero */}
       <section className="bg-hero-warm text-white pattern-islamic">
         <div className="container-faith py-10 md:py-16 text-center">
@@ -73,7 +123,7 @@ export default function QuranPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair mb-3">
               The Noble Quran
             </h1>
-            <p className="text-white/60 text-base max-w-lg mx-auto mb-8">
+            <p className="text-white/90 text-base max-w-lg mx-auto mb-8">
               Read, reflect, and find guidance in the words of Allah
             </p>
 
@@ -85,7 +135,7 @@ export default function QuranPage() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     searchMode === "surahs"
                       ? "bg-white/20 text-white"
-                      : "text-white/50 hover:text-white/70"
+                      : "text-white/90 hover:text-white"
                   }`}
                 >
                   Filter Surahs
@@ -95,7 +145,7 @@ export default function QuranPage() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     searchMode === "verses"
                       ? "bg-white/20 text-white"
-                      : "text-white/50 hover:text-white/70"
+                      : "text-white/90 hover:text-white"
                   }`}
                 >
                   Search Verses
@@ -107,7 +157,7 @@ export default function QuranPage() {
             <div className="max-w-xl mx-auto relative">
               <Search
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/90"
               />
               {searchMode === "surahs" ? (
                 <input
@@ -115,7 +165,7 @@ export default function QuranPage() {
                   placeholder="Search by Surah name or number..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="input-with-left-icon w-full bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl py-3.5 pr-5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all text-sm"
+                  className="input-with-left-icon w-full bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl py-3.5 pr-5 text-white placeholder:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all text-sm"
                 />
               ) : (
                 <input
@@ -123,7 +173,7 @@ export default function QuranPage() {
                   placeholder="Search verses by keyword..."
                   value={verseQuery}
                   onChange={(e) => handleVerseSearch(e.target.value)}
-                  className="input-with-left-icon w-full bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl py-3.5 pr-5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all text-sm"
+                  className="input-with-left-icon w-full bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl py-3.5 pr-5 text-white placeholder:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all text-sm"
                 />
               )}
             </div>
@@ -132,6 +182,19 @@ export default function QuranPage() {
       </section>
 
       <div className="container-faith py-8 md:py-12">
+        {/* Educational Introduction */}
+        <div className="card-elevated p-6 md:p-8 mb-8">
+          <h2 className="font-playfair text-xl md:text-2xl font-bold text-text mb-4">About the Holy Quran</h2>
+          <div className="space-y-3">
+            <p className="text-text-secondary text-sm leading-relaxed">
+              The Quran is the central religious text of Islam, believed by Muslims to be the literal word of Allah as revealed to the Prophet Muhammad (peace be upon him) through the Angel Jibreel over a period of approximately 23 years, beginning in 610 CE. It comprises 114 chapters known as surahs, which range from the shortest at just three verses to the longest containing 286 verses. The surahs are broadly classified as Meccan or Medinan, reflecting whether they were revealed before or after the Prophet's migration to Medina. Meccan surahs tend to focus on matters of faith and the hereafter, while Medinan surahs often address social laws and community life.
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              This reader presents the Arabic text alongside the Saheeh International English translation, widely regarded for its clarity and faithfulness to the original meaning. You can browse all 114 surahs below, filter by name or number, or search directly through verses using keywords. Select any surah to read its full text with Arabic script, transliteration, and translation side by side.
+            </p>
+          </div>
+        </div>
+
         {searchMode === "verses" ? (
           <>
             <div className="flex items-center justify-between mb-6">

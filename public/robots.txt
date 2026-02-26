@@ -1,0 +1,31 @@
+# Siraat - Islamic Spiritual Companion
+# https://siraatt.vercel.app
+
+User-agent: *
+Allow: /
+
+# Auth and user-specific pages
+Disallow: /auth/
+Disallow: /settings
+Disallow: /quran/bookmarks
+
+Sitemap: https://siraatt.vercel.app/sitemap.xml
+
+# AI search engine crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
+Disallow: /

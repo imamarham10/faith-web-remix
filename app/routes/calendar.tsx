@@ -10,8 +10,10 @@ import {
   ArrowRightLeft,
   Globe,
 } from "lucide-react";
+import { useLoaderData } from "react-router";
 import { calendarAPI } from "~/services/api";
 import type { IslamicEvent } from "~/types";
+import { JsonLd } from "~/components/JsonLd";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -89,12 +91,48 @@ interface CalendarDay {
   events?: any[];
 }
 
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const [todayRes, upcomingRes, monthsRes] = await Promise.allSettled([
+    fetch(`${API_BASE}/api/v1/islam/calendar/today`),
+    fetch(`${API_BASE}/api/v1/islam/calendar/events/upcoming?days=90`),
+    fetch(`${API_BASE}/api/v1/islam/calendar/months`),
+  ]);
+
+  let hijriToday: any = null;
+  let upcomingEvents: any[] = [];
+  let hijriMonths: any[] = [];
+
+  if (todayRes.status === "fulfilled" && todayRes.value.ok) {
+    const json = await todayRes.value.json();
+    const payload = json.data ?? json;
+    const hijri = payload?.hijri ?? payload;
+    hijriToday = hijri;
+  }
+
+  if (upcomingRes.status === "fulfilled" && upcomingRes.value.ok) {
+    const json = await upcomingRes.value.json();
+    const raw = json.data ?? json;
+    upcomingEvents = Array.isArray(raw) ? raw : [];
+  }
+
+  if (monthsRes.status === "fulfilled" && monthsRes.value.ok) {
+    const json = await monthsRes.value.json();
+    const raw = json.data ?? json;
+    hijriMonths = Array.isArray(raw) ? raw : [];
+  }
+
+  return { hijriToday, upcomingEvents, hijriMonths };
+}
+
 export default function CalendarPage() {
+  const loaderData = useLoaderData<typeof loader>();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<IslamicEvent[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>(loaderData.upcomingEvents);
   const [loading, setLoading] = useState(true);
-  const [hijriToday, setHijriToday] = useState<any>(null);
+  const [hijriToday, setHijriToday] = useState<any>(loaderData.hijriToday);
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
   const [monthData, setMonthData] = useState<any>(null);
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
@@ -262,7 +300,7 @@ export default function CalendarPage() {
           }`}
         >
           <span className="font-semibold text-lg">{cell.gregorianDay}</span>
-          <span className="text-[10px] opacity-60">{cell.hijriDay || "—"}</span>
+          <span className="text-[11px] opacity-60">{cell.hijriDay || "\u2014"}</span>
           {hasEvents && (
             <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-primary rounded-full" />
           )}
@@ -273,6 +311,13 @@ export default function CalendarPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Islamic Calendar - Hijri Dates & Events",
+        "description": "Hijri-Gregorian calendar converter with upcoming Islamic events and holidays.",
+        "url": "https://siraatt.vercel.app/calendar"
+      }} />
       {/* Hero */}
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-14">
@@ -282,7 +327,7 @@ export default function CalendarPage() {
               <h1 className="text-3xl sm:text-4xl font-bold font-playfair mb-2">
                 Islamic Calendar
               </h1>
-              <p className="text-white/60 text-sm">
+              <p className="text-white/90 text-sm">
                 Track Hijri dates, convert calendars, and never miss an Islamic event
               </p>
             </div>
@@ -290,22 +335,22 @@ export default function CalendarPage() {
             {/* Today's Hijri Date */}
             <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/15">
-                <p className="text-white/50 text-xs uppercase tracking-wider mb-3">Today's Date</p>
-                {loading ? (
-                  <Loader2 size={20} className="animate-spin text-white/50 mt-2" />
+                <p className="text-white/90 text-xs uppercase tracking-wider mb-3">Today's Date</p>
+                {loading && !hijriToday ? (
+                  <Loader2 size={20} className="animate-spin text-white/80 mt-2" />
                 ) : hijriToday ? (
                   <div className="space-y-3">
                     {/* Hijri Date */}
                     <div>
-                      <p className="text-white/60 text-xs mb-0.5">Hijri Date</p>
+                      <p className="text-white/90 text-xs mb-0.5">Hijri Date</p>
                       <p className="text-xl font-bold text-white">
                         {hijriToday.hijriDay || hijriToday.day} {hijriToday.hijriMonthName || hijriToday.monthName || hijriToday.month_name || ""} {hijriToday.hijriYear || hijriToday.year} AH
                       </p>
                     </div>
 
-                    {/* Gregorian Date — computed client-side to match the selected timezone */}
+                    {/* Gregorian Date -- computed client-side to match the selected timezone */}
                     <div>
-                      <p className="text-white/60 text-xs mb-0.5">Gregorian Date</p>
+                      <p className="text-white/90 text-xs mb-0.5">Gregorian Date</p>
                       <p className="text-sm text-white/80">
                         {new Intl.DateTimeFormat("en-US", {
                           timeZone: selectedTimezone,
@@ -320,11 +365,11 @@ export default function CalendarPage() {
                     {/* Events Today */}
                     {hijriToday.events && hijriToday.events.length > 0 && (
                       <div className="pt-2 border-t border-white/10">
-                        <p className="text-white/60 text-xs mb-1.5">Events Today</p>
+                        <p className="text-white/90 text-xs mb-1.5">Events Today</p>
                         <div className="space-y-1">
                           {hijriToday.events.map((event: any, idx: number) => (
-                            <p key={idx} className="text-xs text-white/70">
-                              • {event.name || event}
+                            <p key={idx} className="text-xs text-white/80">
+                              {"\u2022"} {event.name || event}
                             </p>
                           ))}
                         </div>
@@ -332,7 +377,7 @@ export default function CalendarPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-white/50 text-sm mt-2">
+                  <p className="text-white/80 text-sm mt-2">
                     {new Intl.DateTimeFormat("en-US", {
                       timeZone: selectedTimezone,
                       weekday: "long",
@@ -348,7 +393,22 @@ export default function CalendarPage() {
         </div>
       </section>
 
-      <div className="container-faith py-8 md:py-12">
+      {/* Introductory Prose */}
+      <div className="container-faith pt-8 md:pt-12">
+        <div className="card-elevated p-6 md:p-8 mb-8">
+          <h2 className="font-playfair text-xl md:text-2xl font-bold text-text mb-4">The Islamic Hijri Calendar: A Lunar Tradition</h2>
+          <div className="space-y-3">
+            <p className="text-text-secondary text-sm leading-relaxed">
+              The Islamic calendar, known as the Hijri calendar, is a purely lunar system consisting of twelve months that follow the cycles of the moon. Established during the caliphate of Umar ibn al-Khattab (may Allah be pleased with him), it begins from the year of the Prophet Muhammad's migration (Hijrah) from Mecca to Medina in 622 CE. Because each lunar month is approximately 29 to 30 days, the Hijri year is about 11 days shorter than the Gregorian solar year, causing Islamic dates to shift through the seasons over time.
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Several months hold special significance in Islam. Ramadan, the ninth month, is the month of fasting and heightened devotion. Dhul Hijjah, the twelfth month, hosts the annual Hajj pilgrimage and the celebration of Eid al-Adha. Muharram, the first month, includes the Day of Ashura — a day of fasting and reflection. Rajab and Shaban are considered sacred months of spiritual preparation before Ramadan. Use the interactive calendar and date converter below to track Hijri dates, explore upcoming Islamic events, and seamlessly convert between Hijri and Gregorian calendars.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container-faith pb-8 md:pb-12">
         {/* Calendar Converter */}
         <div className="mb-8">
           <button
@@ -582,7 +642,7 @@ export default function CalendarPage() {
                   <div>
                     <p className="text-xs text-text-muted mb-1">Gregorian Date</p>
                     <p className="font-semibold text-text">
-                      {selectedDay.gregorianDate ? format(new Date(selectedDay.gregorianDate), "d MMMM yyyy") : "—"}
+                      {selectedDay.gregorianDate ? format(new Date(selectedDay.gregorianDate), "d MMMM yyyy") : "\u2014"}
                     </p>
                   </div>
                 </div>
@@ -609,7 +669,7 @@ export default function CalendarPage() {
                                 </p>
                               )}
                               {event.importance && (
-                                <p className="text-[10px] text-text-muted mt-1 uppercase">
+                                <p className="text-[11px] text-text-muted mt-1 uppercase">
                                   {event.importance}
                                 </p>
                               )}
@@ -634,7 +694,7 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                {loading ? (
+                {loading && upcomingEvents.length === 0 ? (
                   <div className="flex flex-col items-center py-12">
                     <Loader2 size={24} className="animate-spin text-primary" />
                   </div>
@@ -663,12 +723,12 @@ export default function CalendarPage() {
                                 )}
                                 <div className="flex items-center justify-between mt-1.5">
                                   {(evt.hijriDay || evt.hijriMonth) && (
-                                    <p className="text-[10px] text-text-muted">
+                                    <p className="text-[11px] text-text-muted">
                                       {evt.hijriDay} {evt.hijriMonth}
                                     </p>
                                   )}
                                   {daysUntil !== undefined && (
-                                    <p className="text-[10px] text-primary font-medium">
+                                    <p className="text-[11px] text-primary font-medium">
                                       {daysUntil === 0 ? "Today" : `In ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
                                     </p>
                                   )}

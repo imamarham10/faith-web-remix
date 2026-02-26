@@ -1,25 +1,29 @@
 import { useState, useEffect } from "react";
-import type { Route } from "./+types/feelings.detail";
-import { Link, useParams } from "react-router"; // Route component
+import { Link, useParams, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { ArrowLeft, Loader2, Sparkles, BookOpen, Share2, Copy, Check } from "lucide-react";
 import { feelingsAPI } from "~/services/api";
-import type { EmotionDetail, Remedy } from "~/types";
+import type { EmotionDetail as EmotionDetailType, Remedy } from "~/types";
+import { JsonLd } from "~/components/JsonLd";
 
-export function meta({ params }: Route.MetaArgs) {
-  const emotionName = params.slug ? params.slug.charAt(0).toUpperCase() + params.slug.slice(1) : "Feeling"; 
-  return [
-    { title: `${emotionName} - Islamic Remedies - Siraat` },
-    {
-      name: "description",
-      content: `Islamic guidance, duas, and verses for when you are feeling ${emotionName}.`,
-    },
-  ];
+export async function loader({ params }: LoaderFunctionArgs) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  if (!params.slug) return { emotion: null };
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/islam/feelings/${params.slug}`);
+    if (!res.ok) return { emotion: null };
+    const json = await res.json();
+    return { emotion: json.data || json };
+  } catch {
+    return { emotion: null };
+  }
 }
 
 export default function EmotionDetail() {
   const { slug } = useParams();
-  const [emotion, setEmotion] = useState<EmotionDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { emotion: loaderEmotion } = useLoaderData<typeof loader>();
+  const [emotion, setEmotion] = useState<EmotionDetailType | null>((loaderEmotion as EmotionDetailType) || null);
+  const [loading, setLoading] = useState(loaderEmotion ? false : true);
   const [error, setError] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -77,13 +81,29 @@ export default function EmotionDetail() {
 
   return (
     <div className="bg-gradient-surface min-h-screen pb-12">
+      {emotion && (
+        <JsonLd data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": `Islamic Remedies for ${emotion.name}`,
+          "description": `Islamic guidance, duas, and Quranic verses for when you are feeling ${emotion.name.toLowerCase()}.`,
+          "url": `https://siraatt.vercel.app/feelings/${emotion.slug || slug}`,
+          "inLanguage": ["en", "ar"],
+          "image": "https://siraatt.vercel.app/og-image.png",
+          "datePublished": "2026-02-01",
+          "dateModified": new Date().toISOString().split("T")[0],
+          "mainEntityOfPage": `https://siraatt.vercel.app/feelings/${emotion.slug || slug}`,
+          "author": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app" },
+          "publisher": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app", "logo": { "@type": "ImageObject", "url": "https://siraatt.vercel.app/og-image.png" } }
+        }} />
+      )}
       {/* Header */}
       <div className="bg-hero-gradient text-white pattern-islamic pt-safe-top">
         <div className="container-faith py-8 md:py-12">
           <div className="flex items-center justify-between mb-6">
             <Link
                 to="/feelings"
-                className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors text-sm font-medium"
             >
                 <ArrowLeft size={16} />
                 All Feelings
@@ -96,7 +116,7 @@ export default function EmotionDetail() {
                     {emotion.icon}
                 </div>
                 <div>
-                    <p className="text-white/60 text-sm font-semibold tracking-wider uppercase mb-1">
+                    <p className="text-white/90 text-sm font-semibold tracking-wider uppercase mb-1">
                         Remedies For
                     </p>
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair tracking-tight capitalize">
@@ -104,7 +124,7 @@ export default function EmotionDetail() {
                     </h1>
                 </div>
             </div>
-            <p className="text-white/80 text-lg leading-relaxed max-w-xl">
+            <p className="text-white/90 text-lg leading-relaxed max-w-xl">
               Remember that Allah tests those He loves. Here are some remedies from the Quran and Sunnah to help soothe your heart.
             </p>
           </div>

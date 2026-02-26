@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { Route } from "./+types/duas.$id";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   ArrowLeft,
   Loader2,
@@ -11,21 +11,26 @@ import {
 } from "lucide-react";
 import { duasAPI } from "~/services/api";
 import type { Dua } from "~/types";
+import { JsonLd } from "~/components/JsonLd";
 
-export function meta({ params }: Route.MetaArgs) {
-  return [
-    { title: "Dua - Siraat" },
-    {
-      name: "description",
-      content: "Read and reflect on this beautiful supplication from the Sunnah.",
-    },
-  ];
+export async function loader({ params }: LoaderFunctionArgs) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  if (!params.id) return { dua: null };
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/islam/duas/${params.id}`);
+    if (!res.ok) return { dua: null };
+    const json = await res.json();
+    return { dua: json.data || json };
+  } catch {
+    return { dua: null };
+  }
 }
 
 export default function DuaDetailPage() {
   const { id } = useParams();
-  const [dua, setDua] = useState<Dua | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { dua: loaderDua } = useLoaderData<typeof loader>();
+  const [dua, setDua] = useState<Dua | null>((loaderDua as Dua) || null);
+  const [loading, setLoading] = useState(loaderDua ? false : true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -93,12 +98,28 @@ export default function DuaDetailPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen pb-12">
+      {dua && (
+        <JsonLd data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": dua.titleEnglish || dua.titleArabic || "Dua",
+          "description": `Read this beautiful supplication with Arabic text, transliteration, and English translation.`,
+          "url": `https://siraatt.vercel.app/duas/${dua.id || id}`,
+          "inLanguage": ["en", "ar"],
+          "image": "https://siraatt.vercel.app/og-image.png",
+          "datePublished": "2026-02-01",
+          "dateModified": new Date().toISOString().split("T")[0],
+          "mainEntityOfPage": `https://siraatt.vercel.app/duas/${dua.id || id}`,
+          "author": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app" },
+          "publisher": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app", "logo": { "@type": "ImageObject", "url": "https://siraatt.vercel.app/og-image.png" } }
+        }} />
+      )}
       {/* Hero */}
       <div className="bg-hero-gradient text-white pattern-islamic pt-safe-top">
         <div className="container-faith py-8 md:py-12">
           <Link
             to="/duas"
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-6 text-sm font-medium"
+            className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors mb-6 text-sm font-medium"
           >
             <ArrowLeft size={16} />
             All Duas
@@ -117,7 +138,7 @@ export default function DuaDetailPage() {
             </h1>
 
             <p
-              className="font-amiri text-2xl sm:text-3xl text-white/70 leading-loose"
+              className="font-amiri text-2xl sm:text-3xl text-white/80 leading-loose"
               dir="rtl"
             >
               {dua.titleArabic}

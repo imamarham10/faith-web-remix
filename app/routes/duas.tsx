@@ -1,26 +1,38 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { Route } from "./+types/duas";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { ArrowLeft, Loader2, AlertCircle, BookOpen, HandHeart, Search, X } from "lucide-react";
 import { duasAPI } from "~/services/api";
 import type { Dua, DuaCategory } from "~/types";
+import { JsonLd } from "~/components/JsonLd";
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Duas & Supplications - Siraat" },
-    {
-      name: "description",
-      content:
-        "Discover duas for every occasion — morning, evening, gratitude, hardship, and more.",
-    },
-  ];
+export async function loader() {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const [duasRes, catsRes] = await Promise.allSettled([
+    fetch(`${API_BASE}/api/v1/islam/duas`),
+    fetch(`${API_BASE}/api/v1/islam/duas/categories`),
+  ]);
+
+  let duas: unknown[] = [];
+  let categories: unknown[] = [];
+
+  if (duasRes.status === 'fulfilled' && duasRes.value.ok) {
+    const json = await duasRes.value.json();
+    duas = json.data || json;
+  }
+  if (catsRes.status === 'fulfilled' && catsRes.value.ok) {
+    const json = await catsRes.value.json();
+    categories = json.data || json;
+  }
+
+  return { duas, categories };
 }
 
 export default function DuasPage() {
-  const [duas, setDuas] = useState<Dua[]>([]);
-  const [categories, setCategories] = useState<DuaCategory[]>([]);
+  const { duas: loaderDuas, categories: loaderCategories } = useLoaderData<typeof loader>();
+  const [duas, setDuas] = useState<Dua[]>((loaderDuas as unknown as Dua[]) || []);
+  const [categories, setCategories] = useState<DuaCategory[]>((loaderCategories as unknown as DuaCategory[]) || []);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(loaderDuas?.length > 0 ? false : true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Dua[]>([]);
@@ -98,12 +110,30 @@ export default function DuasPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen pb-12">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Duas & Supplications",
+        "description": "Discover duas for every occasion — morning, evening, gratitude, hardship, and more.",
+        "url": "https://siraatt.vercel.app/duas",
+        "mainEntity": {
+          "@type": "ItemList",
+          "name": "Islamic Duas & Supplications",
+          "numberOfItems": duas.length,
+          "itemListElement": duas.slice(0, 50).map((dua: any, i: number) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "name": dua.titleEnglish || dua.title || `Dua ${dua.id}`,
+            "url": `https://siraatt.vercel.app/duas/${dua.id}`
+          }))
+        }
+      }} />
       {/* Hero */}
       <div className="bg-hero-gradient text-white pattern-islamic pt-safe-top">
         <div className="container-faith py-8 md:py-12">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-6 text-sm font-medium"
+            className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors mb-6 text-sm font-medium"
           >
             <ArrowLeft size={16} />
             Back to Home
@@ -117,9 +147,24 @@ export default function DuasPage() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair tracking-tight mb-4">
               Duas &amp; Supplications
             </h1>
-            <p className="text-white/80 text-lg leading-relaxed">
+            <p className="text-white/90 text-lg leading-relaxed">
               Find the perfect dua for every moment — from waking up to seeking
               forgiveness, protection, and gratitude.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Introductory Prose */}
+      <div className="container-faith mt-6 mb-0 relative z-10">
+        <div className="card-elevated p-6 md:p-8 mb-8">
+          <h2 className="font-playfair text-xl md:text-2xl font-bold text-text mb-4">The Power of Dua: Supplication in Islam</h2>
+          <div className="space-y-3">
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Dua, or supplication, is the essence of worship in Islam. The Prophet Muhammad (peace be upon him) described it as "the weapon of the believer" and "the spirit of worship." Unlike the formal obligatory prayers (salah), dua is an intimate, personal conversation between a servant and Allah — one that can be made at any time, in any language, and in any state. Through dua, Muslims express gratitude, seek guidance, ask for forgiveness, and place their deepest needs before their Lord.
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Islamic tradition teaches several etiquettes for making dua: beginning with praise of Allah and salutations upon the Prophet, having sincere conviction that Allah will answer, being persistent and not hasty, and choosing blessed times such as the last third of the night, between the adhan and iqamah, while fasting, and during prostration in prayer. The Quran itself encourages believers: "Call upon Me; I will respond to you" (40:60). Browse the collection below to find authentic duas for every occasion — from daily routines to moments of hardship, gratitude, and spiritual longing.
             </p>
           </div>
         </div>

@@ -179,7 +179,7 @@ export default function Header() {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2 rounded-xl hover:bg-black/[0.03] transition-colors"
+                className="lg:hidden p-2.5 rounded-xl hover:bg-black/[0.03] transition-colors"
                 aria-label="Toggle menu"
               >
                 {mobileOpen ? <X size={22} /> : <Menu size={22} />}

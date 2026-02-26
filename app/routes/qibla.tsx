@@ -9,6 +9,7 @@ import {
   LocateFixed,
 } from "lucide-react";
 import { qiblaAPI } from "~/services/api";
+import { JsonLd } from "~/components/JsonLd";
 
 interface CityOption {
   name: string;
@@ -167,6 +168,16 @@ export default function QiblaPage() {
 
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Siraat Qibla Finder",
+        "description": "Find the accurate Qibla direction from your current location.",
+        "url": "https://siraatt.vercel.app/qibla",
+        "applicationCategory": "ReligiousApp",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }} />
       {/* Hero */}
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-14">
@@ -176,7 +187,7 @@ export default function QiblaPage() {
               <div className="relative mb-4" ref={dropdownRef}>
                 <button
                   onClick={() => setShowLocationDropdown(!showLocationDropdown)}
-                  className="flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl border border-white/10"
+                  className="flex items-center gap-2 text-white/90 hover:text-white text-sm transition-colors bg-white/10 hover:bg-white/15 px-4 py-2.5 rounded-xl border border-white/10"
                 >
                   <MapPin size={14} />
                   <span className="max-w-[240px] truncate">{locationName}</span>
@@ -243,7 +254,7 @@ export default function QiblaPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-playfair mb-2">
                 Qibla Finder
               </h1>
-              <p className="text-white/60 text-sm">
+              <p className="text-white/90 text-sm">
                 Find the precise direction to the Holy Kaaba
               </p>
             </div>
@@ -251,7 +262,22 @@ export default function QiblaPage() {
         </div>
       </section>
 
-      <div className="container-faith py-8 md:py-12 max-w-lg mx-auto">
+      {/* Introductory Prose */}
+      <div className="container-faith pt-8 md:pt-12 max-w-lg mx-auto">
+        <div className="card-elevated p-6 md:p-8 mb-8">
+          <h2 className="font-playfair text-xl md:text-2xl font-bold text-text mb-4">What Is the Qibla and Why Do Muslims Face It?</h2>
+          <div className="space-y-3">
+            <p className="text-text-secondary text-sm leading-relaxed">
+              The Qibla is the direction that Muslims face during their five daily prayers (salah), pointing toward the Kaaba in the Sacred Mosque (Al-Masjid al-Haram) in Mecca, Saudi Arabia. The Kaaba, a cube-shaped structure originally built by the Prophet Ibrahim (Abraham) and his son Ismail (peace be upon them), is considered the House of Allah and the most sacred site in Islam. Facing the Qibla unifies over two billion Muslims worldwide, symbolizing the spiritual unity of the Ummah regardless of geography, language, or culture.
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              The Quran commands: "Turn your face toward the Sacred Mosque. Wherever you may be, turn your faces toward it" (2:144). Determining the precise Qibla direction from any point on Earth involves spherical trigonometry — calculating the great-circle bearing from your coordinates to the Kaaba (approximately 21.4225°N, 39.8262°E). Modern tools use GPS data and mathematical formulas to provide highly accurate bearings. This finder calculates your exact Qibla angle and distance to the Kaaba, and on supported mobile devices, the compass rotates in real time using your device's orientation sensors.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container-faith pb-8 md:pb-12 max-w-lg mx-auto">
         {loading ? (
           <div className="flex flex-col items-center py-20">
             <Loader2 size={32} className="animate-spin text-primary mb-3" />

@@ -1,16 +1,8 @@
 import { useState, useEffect } from "react";
-import type { Route } from "./+types/settings";
 import { Link } from "react-router";
 import { Settings, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { userPreferencesAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
-
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Settings - Siraat" },
-    { name: "description", content: "Manage your Siraat preferences and notification settings." },
-  ];
-}
 
 interface UserPreference {
   id: string;
@@ -186,9 +178,9 @@ export default function SettingsPage() {
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-14">
           <div className="animate-fade-in-up">
-            <Settings size={28} className="text-white/70 mb-4" />
+            <Settings size={28} className="text-white/80 mb-4" />
             <h1 className="text-3xl sm:text-4xl font-bold font-playfair mb-2">Settings</h1>
-            <p className="text-white/60 text-sm">Manage your Siraat preferences</p>
+            <p className="text-white/80 text-sm">Manage your Siraat preferences</p>
           </div>
         </div>
       </section>
