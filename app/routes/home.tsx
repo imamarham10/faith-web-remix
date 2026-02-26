@@ -542,7 +542,7 @@ export default function Home() {
         "@type": "WebPage",
         "name": "Siraat - Your Spiritual Companion",
         "description": "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.",
-        "url": "https://siraatt.vercel.app"
+        "url": "https://www.siraat.website"
       }} />
       {/* Hero Section */}
       <section className="bg-hero-gradient text-white pattern-islamic">

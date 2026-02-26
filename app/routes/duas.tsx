@@ -115,7 +115,7 @@ export default function DuasPage() {
         "@type": "CollectionPage",
         "name": "Duas & Supplications",
         "description": "Discover duas for every occasion — morning, evening, gratitude, hardship, and more.",
-        "url": "https://siraatt.vercel.app/duas",
+        "url": "https://www.siraat.website/duas",
         "mainEntity": {
           "@type": "ItemList",
           "name": "Islamic Duas & Supplications",
@@ -124,7 +124,7 @@ export default function DuasPage() {
             "@type": "ListItem",
             "position": i + 1,
             "name": dua.titleEnglish || dua.title || `Dua ${dua.id}`,
-            "url": `https://siraatt.vercel.app/duas/${dua.id}`
+            "url": `https://www.siraat.website/duas/${dua.id}`
           }))
         }
       }} />

@@ -12,11 +12,11 @@ export default function ContactPage() {
           name: "Contact Siraat",
           description:
             "Get in touch with the Siraat team. We welcome feedback, bug reports, and community contributions.",
-          url: "https://siraatt.vercel.app/contact",
+          url: "https://www.siraat.website/contact",
           mainEntity: {
             "@type": "Organization",
             name: "Siraat",
-            url: "https://siraatt.vercel.app",
+            url: "https://www.siraat.website",
             email: "imamarham10@gmail.com",
           },
         }}

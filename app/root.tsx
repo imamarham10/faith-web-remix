@@ -64,7 +64,7 @@ const SURAH_NAMES: Record<number, string> = {
 
 export const meta: Route.MetaFunction = ({ location, error }) => {
   const pathname = location.pathname;
-  const appUrl = "https://siraatt.vercel.app";
+  const appUrl = "https://www.siraat.website";
   const pageUrl = `${appUrl}${pathname}`;
 
   // Handle error pages (404, etc.) — distinct title + noindex
@@ -199,7 +199,7 @@ function BreadcrumbSchema() {
   // Don't add breadcrumbs on homepage
   if (pathname === "/") return null;
 
-  const appUrl = "https://siraatt.vercel.app";
+  const appUrl = "https://www.siraat.website";
 
   // Build breadcrumb items
   const items: Array<{ name: string; url: string }> = [
@@ -282,14 +282,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           "@type": "WebSite",
           "name": "Siraat",
           "alternateName": "Siraat - Your Spiritual Companion",
-          "url": "https://siraatt.vercel.app",
+          "url": "https://www.siraat.website",
           "description": "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.",
           "inLanguage": "en",
           "potentialAction": {
             "@type": "SearchAction",
             "target": {
               "@type": "EntryPoint",
-              "urlTemplate": "https://siraatt.vercel.app/quran?search={search_term_string}"
+              "urlTemplate": "https://www.siraat.website/quran?search={search_term_string}"
             },
             "query-input": "required name=search_term_string"
           }
@@ -298,8 +298,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "Siraat",
-          "url": "https://siraatt.vercel.app",
-          "logo": { "@type": "ImageObject", "url": "https://siraatt.vercel.app/og-image.png", "width": 1200, "height": 630 },
+          "url": "https://www.siraat.website",
+          "logo": { "@type": "ImageObject", "url": "https://www.siraat.website/og-image.png", "width": 1200, "height": 630 },
           "description": "A comprehensive Islamic spiritual companion platform.",
           "foundingDate": "2026-01-01",
           "founder": { "@type": "Person", "name": "Imam Arham" }

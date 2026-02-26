@@ -11,7 +11,7 @@ export default function TermsOfServicePage() {
           name: "Terms of Service - Siraat",
           description:
             "Terms of Service for Siraat, a free Islamic spiritual companion platform.",
-          url: "https://siraatt.vercel.app/terms",
+          url: "https://www.siraat.website/terms",
         }}
       />
 
@@ -46,10 +46,10 @@ export default function TermsOfServicePage() {
               <p className="text-text-secondary text-sm leading-relaxed">
                 By accessing or using Siraat (available at{" "}
                 <a
-                  href="https://siraatt.vercel.app"
+                  href="https://www.siraat.website"
                   className="text-primary hover:underline"
                 >
-                  siraatt.vercel.app
+                  www.siraat.website
                 </a>
                 ), you agree to be bound by these Terms of Service and our{" "}
                 <Link to="/privacy" className="text-primary hover:underline">

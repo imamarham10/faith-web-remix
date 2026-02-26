@@ -49,7 +49,7 @@ export default function Feelings() {
         "@type": "CollectionPage",
         "name": "Islamic Guidance for Your Emotions",
         "description": "Find Islamic remedies, duas, and Quranic verses for every emotional state.",
-        "url": "https://siraatt.vercel.app/feelings",
+        "url": "https://www.siraat.website/feelings",
         "mainEntity": {
           "@type": "ItemList",
           "name": "Islamic Emotional Guidance",
@@ -58,7 +58,7 @@ export default function Feelings() {
             "@type": "ListItem",
             "position": i + 1,
             "name": `Feeling ${e.name || e.slug}`,
-            "url": `https://siraatt.vercel.app/feelings/${e.slug}`
+            "url": `https://www.siraat.website/feelings/${e.slug}`
           }))
         }
       }} />

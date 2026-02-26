@@ -193,7 +193,7 @@ export default function MuhammadNamesPage() {
         "@type": "CollectionPage",
         "name": "99 Names of Prophet Muhammad (SAW)",
         "description": "Explore the 99 beautiful names of Prophet Muhammad with Arabic text, transliteration, and meanings.",
-        "url": "https://siraatt.vercel.app/names/muhammad",
+        "url": "https://www.siraat.website/names/muhammad",
         "mainEntity": {
           "@type": "ItemList",
           "numberOfItems": 99,

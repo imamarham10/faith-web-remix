@@ -84,7 +84,7 @@ export default function QuranPage() {
         "@type": "CollectionPage",
         "name": "The Noble Quran - All 114 Surahs",
         "description": "Read the Holy Quran with Arabic text, English translation, and transliteration. Browse all 114 Surahs.",
-        "url": "https://siraatt.vercel.app/quran",
+        "url": "https://www.siraat.website/quran",
         "mainEntity": {
           "@type": "ItemList",
           "name": "114 Surahs of the Holy Quran",
@@ -108,7 +108,7 @@ export default function QuranPage() {
               "@type": "ListItem",
               "position": i + 1,
               "name": `Surah ${surahNames[i + 1] || i + 1}`,
-              "url": `https://siraatt.vercel.app/quran/${i + 1}`
+              "url": `https://www.siraat.website/quran/${i + 1}`
             };
           })
         }

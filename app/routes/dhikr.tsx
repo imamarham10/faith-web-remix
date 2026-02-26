@@ -230,7 +230,7 @@ export default function DhikrPage() {
         "@type": "WebApplication",
         "name": "Siraat Dhikr Counter",
         "description": "Track your daily dhikr with customizable counters, goals, and streaks.",
-        "url": "https://siraatt.vercel.app/dhikr",
+        "url": "https://www.siraat.website/dhikr",
         "applicationCategory": "ReligiousApp",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
@@ -246,7 +246,7 @@ export default function DhikrPage() {
         "@type": "WebApplication",
         "name": "Siraat Dhikr Counter",
         "description": "Track your daily dhikr with customizable counters, goals, and streaks.",
-        "url": "https://siraatt.vercel.app/dhikr",
+        "url": "https://www.siraat.website/dhikr",
         "applicationCategory": "ReligiousApp",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }

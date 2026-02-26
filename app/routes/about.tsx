@@ -93,11 +93,11 @@ export default function AboutPage() {
           name: "About Siraat",
           description:
             "Learn about Siraat, a free Islamic spiritual companion platform.",
-          url: "https://siraatt.vercel.app/about",
+          url: "https://www.siraat.website/about",
           mainEntity: {
             "@type": "Organization",
             name: "Siraat",
-            url: "https://siraatt.vercel.app",
+            url: "https://www.siraat.website",
             description:
               "A comprehensive Islamic spiritual companion platform.",
           },

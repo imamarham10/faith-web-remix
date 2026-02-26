@@ -168,14 +168,14 @@ export default function SurahDetailPage() {
           "@type": "Article",
           "headline": `Surah ${surah.nameTransliteration || surah.name} - ${surah.nameArabic || surah.name}`,
           "description": `Read Surah ${surah.nameTransliteration || surah.name} (${surah.nameArabic || surah.name}) with Arabic text and English translation. ${surah.versesCount} Ayahs${surah.revelationPlace ? `, revealed in ${surah.revelationPlace}` : ""}.`,
-          "url": `https://siraatt.vercel.app/quran/${surah.id}`,
+          "url": `https://www.siraat.website/quran/${surah.id}`,
           "inLanguage": ["en", "ar"],
-          "image": "https://siraatt.vercel.app/og-image.png",
+          "image": "https://www.siraat.website/og-image.png",
           "datePublished": "2026-02-01",
           "dateModified": new Date().toISOString().split("T")[0],
-          "mainEntityOfPage": `https://siraatt.vercel.app/quran/${surah.id}`,
-          "author": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app" },
-          "publisher": { "@type": "Organization", "name": "Siraat", "url": "https://siraatt.vercel.app", "logo": { "@type": "ImageObject", "url": "https://siraatt.vercel.app/og-image.png" } }
+          "mainEntityOfPage": `https://www.siraat.website/quran/${surah.id}`,
+          "author": { "@type": "Organization", "name": "Siraat", "url": "https://www.siraat.website" },
+          "publisher": { "@type": "Organization", "name": "Siraat", "url": "https://www.siraat.website", "logo": { "@type": "ImageObject", "url": "https://www.siraat.website/og-image.png" } }
         }} />
       )}
       {/* Bookmark toast */}

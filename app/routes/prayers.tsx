@@ -445,7 +445,7 @@ export default function PrayersPage() {
         "@type": "WebApplication",
         "name": "Siraat Prayer Times",
         "description": "Accurate prayer times based on your location with countdown timer and prayer tracking.",
-        "url": "https://siraatt.vercel.app/prayers",
+        "url": "https://www.siraat.website/prayers",
         "applicationCategory": "ReligiousApp",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }

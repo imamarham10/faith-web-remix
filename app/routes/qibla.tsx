@@ -173,7 +173,7 @@ export default function QiblaPage() {
         "@type": "WebApplication",
         "name": "Siraat Qibla Finder",
         "description": "Find the accurate Qibla direction from your current location.",
-        "url": "https://siraatt.vercel.app/qibla",
+        "url": "https://www.siraat.website/qibla",
         "applicationCategory": "ReligiousApp",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }

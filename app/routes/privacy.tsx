@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
           name: "Privacy Policy - Siraat",
           description:
             "Siraat's privacy policy explaining how we collect, use, and protect your personal information.",
-          url: "https://siraatt.vercel.app/privacy",
+          url: "https://www.siraat.website/privacy",
         }}
       />
 
@@ -47,10 +47,10 @@ export default function PrivacyPolicyPage() {
                 disclose, and safeguard your information when you visit our
                 website at{" "}
                 <a
-                  href="https://siraatt.vercel.app"
+                  href="https://www.siraat.website"
                   className="text-primary hover:underline"
                 >
-                  siraatt.vercel.app
+                  www.siraat.website
                 </a>{" "}
                 and use our services. Please read this policy carefully. By
                 using Siraat, you agree to the collection and use of information

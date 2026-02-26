@@ -175,7 +175,7 @@ export default function NamesPage() {
         "@type": "CollectionPage",
         "name": "99 Names of Allah (Al-Asma ul-Husna)",
         "description": "Learn the 99 Beautiful Names of Allah with Arabic calligraphy, transliteration, meanings, and descriptions.",
-        "url": "https://siraatt.vercel.app/names",
+        "url": "https://www.siraat.website/names",
         "mainEntity": {
           "@type": "ItemList",
           "numberOfItems": 99,

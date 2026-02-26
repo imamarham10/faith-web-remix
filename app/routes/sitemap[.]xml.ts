@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 
-const PRODUCTION_URL = "https://siraatt.vercel.app";
+const PRODUCTION_URL = "https://www.siraat.website";
 
 const STATIC_PAGES = [
   "/",

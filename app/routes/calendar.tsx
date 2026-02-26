@@ -316,7 +316,7 @@ export default function CalendarPage() {
         "@type": "WebPage",
         "name": "Islamic Calendar - Hijri Dates & Events",
         "description": "Hijri-Gregorian calendar converter with upcoming Islamic events and holidays.",
-        "url": "https://siraatt.vercel.app/calendar"
+        "url": "https://www.siraat.website/calendar"
       }} />
       {/* Hero */}
       <section className="bg-hero-gradient text-white pattern-islamic">
