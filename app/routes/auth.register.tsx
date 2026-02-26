@@ -22,7 +22,10 @@ const registerSchema = z
   .object({
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
-    phone: z.string().min(5, "Phone number is required"),
+    phone: z
+      .string()
+      .min(1, "Phone number is required")
+      .regex(/^\+?[1-9]\d{6,14}$/, "Enter a valid phone number (e.g., +1234567890)"),
     email: z.string().email("Please enter a valid email"),
     password: z
       .string()
@@ -193,6 +196,7 @@ export default function RegisterPage() {
                 <input
                   {...register("phone")}
                   type="tel"
+                  inputMode="tel"
                   className="input-field input-with-left-icon w-full"
                   placeholder="+91 98765 43210"
                   autoComplete="tel"
