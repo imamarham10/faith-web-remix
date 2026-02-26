@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowRight, Mail, Lock, KeyRound, BookOpen, Moon, Compass } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock, BookOpen, Moon, Compass } from "lucide-react";
 import { useAuth } from "~/contexts/AuthContext";
 
 const loginSchema = z.object({
@@ -14,23 +14,17 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, loginWithOTP, requestOTP, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [useOTP, setUseOTP] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
-  const [otp, setOtp] = useState("");
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
-
-  const email = watch("email");
 
   const onLogin = async (data: LoginForm) => {
     try {
@@ -46,51 +40,6 @@ export default function LoginPage() {
             break;
           case 401:
             setError('Invalid email or password.');
-            break;
-          case 429:
-            setError('Too many attempts. Please try again later.');
-            break;
-          default:
-            setError('Something went wrong. Please try again.');
-        }
-      } else {
-        setError('Network error. Please check your connection.');
-      }
-    }
-  };
-
-  const handleSendOTP = async () => {
-    if (!email || errors.email) {
-      setError("Please enter a valid email first");
-      return;
-    }
-    try {
-      setError("");
-      await requestOTP(email);
-      setOtpSent(true);
-    } catch {
-      setError("Failed to send OTP");
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length < 6) {
-      setError("Please enter a valid 6-digit OTP");
-      return;
-    }
-    try {
-      setError("");
-      await loginWithOTP(email, otp);
-      navigate("/");
-    } catch (err: any) {
-      if (err.response) {
-        const { status, data } = err.response;
-        switch (status) {
-          case 400:
-            setError(data.message || 'Invalid input. Please check your details.');
-            break;
-          case 401:
-            setError('Invalid OTP. Please try again.');
             break;
           case 429:
             setError('Too many attempts. Please try again later.');
@@ -182,8 +131,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {!useOTP ? (
-            <form onSubmit={handleSubmit(onLogin)} className="space-y-5">
+          <form onSubmit={handleSubmit(onLogin)} className="space-y-5">
               <div>
                 <label className="text-sm font-medium text-text mb-1.5 block">Email</label>
                 <div className="relative">
@@ -238,110 +186,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-          ) : (
-            <div className="space-y-5">
-              {!otpSent ? (
-                <>
-                  <div>
-                    <label className="text-sm font-medium text-text mb-1.5 block">Email</label>
-                    <div className="relative">
-                      <Mail
-                        size={16}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-                      />
-                      <input
-                        {...register("email")}
-                        className="input-field input-with-left-icon w-full"
-                        placeholder="you@example.com"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleSendOTP}
-                    disabled={isLoading}
-                    className="btn-primary w-full py-3 disabled:opacity-50"
-                  >
-                    {isLoading ? <Loader2 size={18} className="animate-spin" /> : "Send OTP"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="text-sm font-medium text-text mb-1.5 block">
-                      Enter OTP sent to {email}
-                    </label>
-                    <div className="relative">
-                      <KeyRound
-                        size={16}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-                      />
-                      <input
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        className="input-field input-with-left-icon w-full tracking-[0.3em] text-center text-lg"
-                        placeholder="000000"
-                        maxLength={6}
-                      />
-                    </div>
-                    <p className="text-xs text-text-muted mt-2">
-                      Didn't receive it?{" "}
-                      <button
-                        onClick={handleSendOTP}
-                        className="text-primary font-medium hover:underline"
-                      >
-                        Resend
-                      </button>
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleVerifyOTP}
-                    disabled={isLoading}
-                    className="btn-primary w-full py-3 disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <>
-                        Verify & Sign In
-                        <ArrowRight size={16} />
-                      </>
-                    )}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border-light" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-bg px-3 text-xs text-text-muted">or</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setUseOTP(!useOTP);
-              setError("");
-              setOtpSent(false);
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-text-secondary border border-border-light hover:border-primary/30 hover:text-primary transition-all"
-          >
-            {useOTP ? (
-              <>
-                <Lock size={15} />
-                Sign in with Password
-              </>
-            ) : (
-              <>
-                <KeyRound size={15} />
-                Sign in with OTP
-              </>
-            )}
-          </button>
 
           <p className="text-center text-sm text-text-secondary mt-8">
             Don't have an account?{" "}
