@@ -1,34 +1,47 @@
-import axios, { type AxiosInstance } from 'axios';
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import { ENV } from '../utils/env';
 
-// Create axios instance with credentials for httpOnly cookie auth
+// Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 10000,
-  withCredentials: true,
 });
 
 // Global refresh lock to prevent concurrent refresh attempts
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: () => void;
+  resolve: (token: string) => void;
   reject: (error: any) => void;
 }> = [];
 
-const processQueue = (error: any) => {
+const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve();
+      prom.resolve(token!);
     }
   });
 
   failedQueue = [];
 };
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('accessToken');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Response interceptor for error handling
 api.interceptors.response.use(
@@ -40,9 +53,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // Queue the request while refresh is in progress
-        return new Promise<void>((resolve, reject) => {
+        return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then(() => {
+        }).then((token) => {
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
           return api(originalRequest);
         }).catch((err) => Promise.reject(err));
       }
@@ -51,18 +67,33 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {}, {
-          withCredentials: true,
-        });
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          const response = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
+            refresh_token: refreshToken,
+          });
 
-        processQueue(null);
-        isRefreshing = false;
+          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          localStorage.setItem('accessToken', accessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
 
-        return api(originalRequest);
+          processQueue(null, accessToken);
+          isRefreshing = false;
+
+          // Retry original request with new token
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          }
+          return api(originalRequest);
+        }
       } catch (refreshError) {
-        // Refresh failed — clear auth state but don't redirect.
+        // Refresh failed — clear tokens but don't redirect.
         // Pages handle 401s gracefully; only auth-required features degrade.
-        processQueue(refreshError);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        processQueue(refreshError, null);
         isRefreshing = false;
         return Promise.reject(refreshError);
       }
@@ -78,22 +109,22 @@ export default api;
 export const authAPI = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
-  
+
   register: (email: string, password: string, firstName: string, lastName: string, phone: string) =>
     api.post('/auth/register', { email, password, firstName, lastName, phone }),
-  
+
   requestOTP: (email: string) =>
     api.post('/auth/login/request-otp', { email }),
-  
+
   verifyOTP: (email: string, otp: string) =>
     api.post('/auth/login/verify-otp', { email, otp }),
-  
-  logout: () =>
-    api.post('/auth/logout'),
-  
+
+  logout: (refreshToken: string) =>
+    api.post('/auth/logout', { refresh_token: refreshToken }),
+
   getProfile: () =>
     api.get('/auth/profile'),
-  
+
   validateToken: () =>
     api.get('/auth/validate'),
 };
@@ -127,13 +158,13 @@ export const calendarAPI = {
 export const prayerAPI = {
   getTimes: (lat: number, lng: number, date?: string, method?: string) =>
     api.get('/api/v1/islam/prayers/times', { params: { lat, lng, date, method } }),
-  
+
   getCurrent: (lat: number, lng: number) =>
     api.get('/api/v1/islam/prayers/current', { params: { lat, lng } }),
-  
+
   logPrayer: (prayerName: string, date: string, status: 'on_time' | 'late' | 'qada') =>
     api.post('/api/v1/islam/prayers/log', { prayerName, date, status }),
-  
+
   getLogs: (fromDate?: string, toDate?: string) =>
     api.get('/api/v1/islam/prayers/logs', { params: { fromDate, toDate } }),
 
@@ -147,16 +178,16 @@ export const prayerAPI = {
 export const quranAPI = {
   getSurahs: () =>
     api.get('/api/v1/islam/quran/surahs'),
-  
+
   getSurah: (id: number) =>
     api.get(`/api/v1/islam/quran/surah/${id}`),
-  
+
   searchVerses: (query: string) =>
     api.get('/api/v1/islam/quran/search', { params: { q: query } }),
-  
+
   addBookmark: (surahId: number, verseNumber: number, note?: string) =>
     api.post('/api/v1/islam/quran/bookmarks', { surahId, verseNumber, note }),
-  
+
   getBookmarks: () =>
     api.get('/api/v1/islam/quran/bookmarks'),
 
