@@ -53,9 +53,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
       };
     });
 
-    return { surah, verses };
+    // SSR only first 30 verses to reduce HTML payload (Al-Baqarah was 920KB)
+    const SSR_VERSE_LIMIT = 30;
+    const initialVerses = verses.slice(0, SSR_VERSE_LIMIT);
+    const hasMore = verses.length > SSR_VERSE_LIMIT;
+    const totalVerses = verses.length;
+    return { surah, verses: initialVerses, hasMore, totalVerses };
   } catch {
-    return { surah: null, verses: [] };
+    return { surah: null, verses: [], hasMore: false, totalVerses: 0 };
   }
 }
 
@@ -71,6 +76,8 @@ export default function SurahDetailPage() {
   const [showBookmarkToast, setShowBookmarkToast] = useState(false);
   const [searchParams] = useSearchParams();
   const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
+  const [allVersesLoaded, setAllVersesLoaded] = useState(!loaderData?.hasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!surahId) return;
@@ -92,7 +99,6 @@ export default function SurahDetailPage() {
           const rawVerses: any[] = data.verses || [];
           setVerses(
             rawVerses.map((v: any) => {
-              // Get translation from either flat field or translations array
               let translation = v.textTranslation || v.text_translation || "";
               if (!translation && v.translations?.length > 0) {
                 translation = v.translations[0].text || "";
@@ -107,11 +113,59 @@ export default function SurahDetailPage() {
               };
             })
           );
+          setAllVersesLoaded(true);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [surahId]);
+
+  // Lazy-load remaining verses when user scrolls near the bottom
+  useEffect(() => {
+    if (allVersesLoaded || loading || !loaderData?.hasMore) return;
+
+    const sentinel = document.getElementById("load-more-sentinel");
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          setLoadingMore(true);
+          quranAPI
+            .getSurah(Number(surahId))
+            .then((res) => {
+              const data = res.data?.data || res.data;
+              if (data) {
+                const rawVerses: any[] = data.verses || [];
+                setVerses(
+                  rawVerses.map((v: any) => {
+                    let translation = v.textTranslation || v.text_translation || "";
+                    if (!translation && v.translations?.length > 0) {
+                      translation = v.translations[0].text || "";
+                    }
+                    return {
+                      id: v.id,
+                      surahId: v.surahId || v.surah_id || Number(surahId),
+                      verseNumber: v.verseNumber || v.verse_number || v.id,
+                      textArabic: v.textArabic || v.text_arabic || "",
+                      textTranslation: translation,
+                      textTransliteration: v.textTransliteration || v.text_transliteration,
+                    };
+                  })
+                );
+                setAllVersesLoaded(true);
+              }
+            })
+            .catch(() => {})
+            .finally(() => setLoadingMore(false));
+        }
+      },
+      { rootMargin: "600px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [allVersesLoaded, loading, surahId, loadingMore]);
 
   // Scroll to and highlight a specific verse when ?verse=N is in the URL
   useEffect(() => {
@@ -319,6 +373,14 @@ export default function SurahDetailPage() {
                 );
               })}
             </div>
+
+            {/* Load more sentinel for lazy-loading remaining verses */}
+            {!allVersesLoaded && (
+              <div id="load-more-sentinel" className="flex items-center justify-center py-8 gap-2">
+                <Loader2 size={20} className="animate-spin text-primary" />
+                <span className="text-sm text-text-muted">Loading more verses...</span>
+              </div>
+            )}
 
             {/* Navigation */}
             <div className="flex items-center justify-between mt-10 pt-6 border-t border-border-light">

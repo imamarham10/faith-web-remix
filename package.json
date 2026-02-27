@@ -10,6 +10,9 @@
     "test:e2e": "npx tsx e2e/run.ts"
   },
   "dependencies": {
+    "@fontsource-variable/playfair-display": "^5.2.8",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/amiri": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@react-router/node": "7.12.0",
     "@react-router/serve": "7.12.0",

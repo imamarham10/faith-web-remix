@@ -22,16 +22,6 @@ import { Analytics } from "@vercel/analytics/react";
 const faviconSvg = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%231B6B4E"/><stop offset="100%" style="stop-color:%23157347"/></linearGradient></defs><rect x="0" y="0" width="180" height="180" rx="40" fill="url(%23grad)"/><text x="90" y="115" font-size="100" text-anchor="middle" fill="white" font-family="Arial, sans-serif">☽</text></svg>`;
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Amiri:wght@400;700&family=Playfair+Display:wght@400;700&display=swap",
-  },
   { rel: "icon", href: faviconSvg, type: "image/svg+xml" },
   { rel: "apple-touch-icon", href: faviconSvg },
 ];
@@ -199,6 +189,11 @@ function BreadcrumbSchema() {
   // Don't add breadcrumbs on homepage
   if (pathname === "/") return null;
 
+  // Only render for known route prefixes (avoids invalid breadcrumbs on 404 pages)
+  const segments = pathname.split("/").filter(Boolean);
+  const validRoots = ["prayers", "quran", "dhikr", "calendar", "qibla", "names", "feelings", "duas", "about", "privacy", "terms", "contact", "settings", "auth"];
+  if (segments.length === 0 || !validRoots.includes(segments[0])) return null;
+
   const appUrl = "https://www.siraat.website";
 
   // Build breadcrumb items
@@ -225,8 +220,6 @@ function BreadcrumbSchema() {
   };
 
   // Handle multi-segment paths (e.g., /names/muhammad, /quran/1, /feelings/sad)
-  const segments = pathname.split("/").filter(Boolean);
-
   if (segments.length === 1) {
     // Single segment: /prayers, /quran, /about, etc.
     const name = routeNames[pathname] || segments[0].charAt(0).toUpperCase() + segments[0].slice(1);
@@ -360,7 +353,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg p-6">
         <div className="text-center max-w-md">
-          <div className="text-6xl font-bold text-gradient-primary font-playfair mb-4">{message}</div>
+          <h1 className="text-6xl font-bold text-gradient-primary font-playfair mb-4">{message}</h1>
           <p className="text-text-secondary text-lg mb-8">{details}</p>
           <a href="/" className="btn-primary inline-flex">
             Go Home

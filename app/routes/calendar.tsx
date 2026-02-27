@@ -148,6 +148,7 @@ export default function CalendarPage() {
   // to the real client timezone after mount so calendarAdjust is computed correctly.
   const [selectedTimezone, setSelectedTimezone] = useState("UTC");
   const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false);
+  const [timezoneSearch, setTimezoneSearch] = useState("");
 
   // Set the real client timezone once after hydration
   useEffect(() => {
@@ -526,20 +527,22 @@ export default function CalendarPage() {
                       type="text"
                       placeholder="Search timezone..."
                       className="input-field w-full text-sm"
-                      onChange={() => {
-                        // Filter logic can be added here
-                      }}
+                      value={timezoneSearch}
+                      onChange={(e) => setTimezoneSearch(e.target.value)}
                     />
                   </div>
 
                   {/* Timezone List */}
                   <div className="max-h-64 overflow-y-auto">
-                    {TIMEZONES.map((tz) => (
+                    {TIMEZONES.filter((tz) =>
+                      tz.label.toLowerCase().includes(timezoneSearch.toLowerCase())
+                    ).map((tz) => (
                       <button
                         key={tz.value}
                         onClick={() => {
                           setSelectedTimezone(tz.value);
                           setShowTimezoneDropdown(false);
+                          setTimezoneSearch("");
                         }}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors border-b border-border-light last:border-b-0 hover:bg-primary/5 ${
                           selectedTimezone === tz.value ? "bg-primary/10 font-semibold text-primary" : "text-text"

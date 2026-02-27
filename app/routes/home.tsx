@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import type { Route } from "./+types/home";
 import { Link, useLoaderData } from "react-router";
 import {
@@ -218,7 +218,33 @@ export async function loader() {
     } catch {}
   }
 
-  return { calendarToday, upcomingEvents, dailyName, emotions };
+  // Daily inspiration (deterministic by date — move to SSR to eliminate client-side API call)
+  let dailyInspiration: { text: string; source: string; arabic?: string; translation?: string } | null = null;
+  try {
+    const searchRes = await fetch(`${API_BASE}/api/v1/islam/quran/search?q=allah`);
+    if (searchRes.ok) {
+      const json = await searchRes.json();
+      const results = json.data || json;
+      if (Array.isArray(results) && results.length > 0) {
+        const d = new Date();
+        const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+        const idx = seed % results.length;
+        const v = results[idx];
+        const translation = Array.isArray(v.translations) && v.translations.length > 0
+          ? v.translations[0].text
+          : v.textTranslation || v.text || "";
+        const surahName = v.surah?.nameEnglish || v.surah?.nameTransliteration || v.surah?.name || v.surahId;
+        dailyInspiration = {
+          text: translation,
+          source: `Surah ${surahName} ${v.verseNumber}`,
+          arabic: v.textArabic,
+          translation: translation,
+        };
+      }
+    }
+  } catch {}
+
+  return { calendarToday, upcomingEvents, dailyName, emotions, dailyInspiration };
 }
 
 export default function Home() {
@@ -247,7 +273,6 @@ export default function Home() {
   const [todayEvents, setTodayEvents] = useState<any[]>(initialTodayEvents);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimings | null>(null);
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time: string } | null>(null);
-  const [countdown, setCountdown] = useState("");
   const [locationName, setLocationName] = useState("Locating...");
   const [isPastIsha, setIsPastIsha] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>(loaderData?.upcomingEvents?.length ? loaderData.upcomingEvents : []);
@@ -452,30 +477,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [prayerTimes]);
 
-  // Countdown timer
-  useEffect(() => {
-    if (!nextPrayer) return;
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const [h, m] = nextPrayer.time.split(":").map(Number);
-      const target = new Date();
-      target.setHours(h, m, 0, 0);
-      if (target <= now) target.setDate(target.getDate() + 1);
-
-      const diff = target.getTime() - now.getTime();
-      const hours = Math.floor(diff / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      setCountdown(
-        `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-      );
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, [nextPrayer]);
+  // Countdown timer extracted to CountdownTimer component below
 
   // Fetch personalized dashboard data for logged-in users
   useEffect(() => {
@@ -637,25 +639,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {countdown && (
-                  <div className="mb-6">
-                    <p className="text-white/90 text-xs mb-2 uppercase tracking-wider">
-                      Countdown
-                    </p>
-                    <div className="flex gap-2">
-                      {countdown.split(":").map((unit, i) => (
-                        <div key={i} className="bg-white/10 rounded-xl px-4 py-3 text-center flex-1">
-                          <span className="text-white text-2xl sm:text-3xl font-bold tabular-nums">
-                            {unit}
-                          </span>
-                          <p className="text-white/90 text-[11px] uppercase mt-0.5">
-                            {["hrs", "min", "sec"][i]}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <CountdownTimer nextPrayer={nextPrayer} />
 
                 {/* All Prayer Times */}
                 {prayerTimes && (
@@ -917,7 +901,7 @@ export default function Home() {
                 <p className="section-subtitle">Start your day with guidance</p>
               </div>
             </div>
-            <DailyInspirationCard />
+            <DailyInspirationCard initialData={loaderData?.dailyInspiration || null} />
           </div>
 
           {/* Sidebar - Upcoming Events from API */}
@@ -1207,16 +1191,63 @@ function FeatureCard({
   );
 }
 
-function DailyInspirationCard() {
-  const [inspiration, setInspiration] = useState<{
-    text: string;
-    source: string;
-    arabic?: string;
-    translation?: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+const CountdownTimer = memo(function CountdownTimer({ nextPrayer }: { nextPrayer: { name: string; time: string } | null }) {
+  const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
+    if (!nextPrayer) return;
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const [h, m] = nextPrayer.time.split(":").map(Number);
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+      if (target <= now) target.setDate(target.getDate() + 1);
+
+      const diff = target.getTime() - now.getTime();
+      const hours = Math.floor(diff / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setCountdown(
+        `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+      );
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [nextPrayer]);
+
+  if (!countdown) return null;
+
+  return (
+    <div className="mb-6">
+      <p className="text-white/90 text-xs mb-2 uppercase tracking-wider">
+        Countdown
+      </p>
+      <div className="flex gap-2">
+        {countdown.split(":").map((unit, i) => (
+          <div key={i} className="bg-white/10 rounded-xl px-4 py-3 text-center flex-1">
+            <span className="text-white text-2xl sm:text-3xl font-bold tabular-nums">
+              {unit}
+            </span>
+            <p className="text-white/90 text-[11px] uppercase mt-0.5">
+              {["hrs", "min", "sec"][i]}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+function DailyInspirationCard({ initialData }: { initialData: { text: string; source: string; arabic?: string; translation?: string } | null }) {
+  const [inspiration, setInspiration] = useState(initialData);
+  const [loading, setLoading] = useState(!initialData);
+
+  // Only fetch client-side if SSR loader didn't provide data
+  useEffect(() => {
+    if (initialData) return;
     getDailyInspiration()
       .then(setInspiration)
       .catch(() => {})

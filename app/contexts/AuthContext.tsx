@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authAPI } from '../services/api';
+import axios from 'axios';
+import { ENV } from '../utils/env';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -21,23 +23,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Skip auth check during SSR — localStorage doesn't exist on the server
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
+
     const checkAuth = async () => {
       const token = localStorage.getItem('accessToken');
-      if (token) {
-        try {
-          const response = await authAPI.getProfile();
-          setUser(response.data?.data || response.data?.user || response.data);
-        } catch (error: any) {
-          // Only clear tokens if the error is 401 (token actually invalid)
-          // For network errors or other issues, keep tokens and allow retry
-          if (error.response?.status === 401) {
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await authAPI.getProfile();
+        setUser(response.data?.data || response.data?.user || response.data);
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          // Access token expired — try refreshing before giving up
+          const refreshToken = localStorage.getItem('refreshToken');
+          if (refreshToken) {
+            try {
+              const refreshRes = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
+                refresh_token: refreshToken,
+              });
+              const resData = refreshRes.data?.data || refreshRes.data;
+              const newAccessToken = resData.accessToken || resData.access_token;
+              const newRefreshToken = resData.refreshToken || resData.refresh_token;
+
+              if (newAccessToken) {
+                localStorage.setItem('accessToken', newAccessToken);
+              }
+              if (newRefreshToken) {
+                localStorage.setItem('refreshToken', newRefreshToken);
+              }
+
+              // Retry profile fetch with new token
+              if (newAccessToken) {
+                const retryRes = await authAPI.getProfile();
+                setUser(retryRes.data?.data || retryRes.data?.user || retryRes.data);
+              }
+            } catch {
+              // Refresh also failed — tokens are truly invalid
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+            }
+          } else {
+            // No refresh token available — clear access token
             localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
           }
-          // For other errors (network, server errors), don't clear tokens
-          // The user will remain in the authenticated state and can retry
         }
+        // For network/server errors, keep tokens and allow retry on next navigation
       }
       setIsLoading(false);
     };
@@ -103,6 +140,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Listen for token clearing events from axios interceptor
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleStorageChange = (e: StorageEvent) => {
       // If tokens are cleared in localStorage, sync the auth context
       if ((e.key === 'accessToken' || e.key === 'refreshToken') && e.newValue === null) {

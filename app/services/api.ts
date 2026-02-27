@@ -32,9 +32,11 @@ const processQueue = (error: any, token: string | null = null) => {
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -67,14 +69,20 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
         if (refreshToken) {
           const response = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem('accessToken', accessToken);
+          // Handle both wrapped ({ data: { accessToken } }) and unwrapped ({ accessToken }) responses
+          const resData = response.data?.data || response.data;
+          const accessToken = resData.accessToken || resData.access_token;
+          const newRefreshToken = resData.refreshToken || resData.refresh_token;
+
+          if (accessToken) {
+            localStorage.setItem('accessToken', accessToken);
+          }
           if (newRefreshToken) {
             localStorage.setItem('refreshToken', newRefreshToken);
           }
@@ -91,8 +99,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed — clear tokens but don't redirect.
         // Pages handle 401s gracefully; only auth-required features degrade.
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
         processQueue(refreshError, null);
         isRefreshing = false;
         return Promise.reject(refreshError);
