@@ -7,7 +7,10 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test:e2e": "npx tsx e2e/run.ts"
+    "test:e2e": "npx tsx e2e/run.ts",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@fontsource-variable/playfair-display": "^5.2.8",
@@ -19,7 +22,6 @@
     "@vercel/analytics": "^1.6.1",
     "axios": "^1.13.5",
     "date-fns": "^4.1.0",
-    "isbot": "^5.1.31",
     "lucide-react": "^0.564.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -28,15 +30,18 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.25.6",
     "@react-router/dev": "7.12.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^22",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "isbot": "^5.1.35",
     "puppeteer": "^24.37.5",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "wrangler": "^4.69.0"
   }
 }
