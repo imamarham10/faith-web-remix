@@ -16,6 +16,7 @@ import {
   Heart,
   Smile,
   Settings,
+  Crown,
 } from "lucide-react";
 
 const navLinks = [
@@ -34,7 +35,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, isPremium, logout } = useAuth();
 
   useEffect(() => {
     let ticking = false;
@@ -155,6 +156,16 @@ export default function Header() {
                           </p>
                         </div>
                         <Link
+                          to="/subscribe"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-black/[0.03]"
+                        >
+                          <Crown size={15} className={isPremium ? "text-amber-500" : "text-text-secondary"} />
+                          <span className={isPremium ? "text-amber-600 font-medium" : "text-text-secondary"}>
+                            {isPremium ? "Premium Active" : "Upgrade to Premium"}
+                          </span>
+                        </Link>
+                        <Link
                           to="/settings"
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:bg-black/[0.03] transition-colors"
@@ -257,6 +268,15 @@ export default function Header() {
                     </p>
                   </div>
                 </div>
+                <Link
+                  to="/subscribe"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/[0.03] transition-colors mt-1"
+                >
+                  <Crown size={18} className={isPremium ? "text-amber-500" : "text-text-secondary"} />
+                  <span className={`text-sm font-medium ${isPremium ? "text-amber-600" : "text-text-secondary"}`}>
+                    {isPremium ? "Premium Active" : "Upgrade to Premium"}
+                  </span>
+                </Link>
                 <button
                   onClick={() => {
                     logout();

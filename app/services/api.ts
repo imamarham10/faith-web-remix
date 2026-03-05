@@ -189,8 +189,8 @@ export const quranAPI = {
   getSurahs: () =>
     api.get('/api/v1/islam/quran/surahs'),
 
-  getSurah: (id: number) =>
-    api.get(`/api/v1/islam/quran/surah/${id}`),
+  getSurah: (id: number, script?: string) =>
+    api.get(`/api/v1/islam/quran/surah/${id}`, { params: script ? { script } : undefined }),
 
   searchVerses: (query: string) =>
     api.get('/api/v1/islam/quran/search', { params: { q: query } }),
@@ -203,6 +203,21 @@ export const quranAPI = {
 
   deleteBookmark: (id: string) =>
     api.delete(`/api/v1/islam/quran/bookmarks/${id}`),
+
+  // Premium endpoints
+  getAvailableTranslations: (lang: string = 'en') =>
+    api.get('/api/v1/islam/quran/translations', { params: { lang } }),
+
+  getReciters: () =>
+    api.get('/api/v1/islam/quran/reciters'),
+
+  getSurahPremium: (id: number, translations: string[] = ['Saheeh International'], transliteration: boolean = false, script?: string) =>
+    api.get(`/api/v1/islam/quran/surah/${id}/premium`, {
+      params: { translations: translations.join(','), transliteration: String(transliteration), ...(script ? { script } : {}) },
+    }),
+
+  getSurahAudio: (surahId: number, reciterSlug: string = 'ar.alafasy') =>
+    api.get(`/api/v1/islam/quran/surah/${surahId}/audio`, { params: { reciter: reciterSlug } }),
 };
 
 export const dhikrAPI = {
@@ -307,4 +322,18 @@ export const userPreferencesAPI = {
 
   updatePreferences: (data: Record<string, unknown>) =>
     api.put('/users/preferences', data),
+};
+
+export const subscriptionAPI = {
+  create: (plan: 'monthly' | 'yearly') =>
+    api.post('/api/v1/subscriptions/create', { plan }),
+
+  verify: (data: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) =>
+    api.post('/api/v1/subscriptions/verify', data),
+
+  getCurrent: () =>
+    api.get('/api/v1/subscriptions/current'),
+
+  cancel: () =>
+    api.post('/api/v1/subscriptions/cancel'),
 };

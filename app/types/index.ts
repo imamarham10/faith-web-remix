@@ -3,6 +3,8 @@ export interface User {
   email: string;
   name: string;
   fullName?: string;
+  roles?: string[];
+  permissions?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -84,7 +86,36 @@ export interface Verse {
   textArabic: string;
   textTranslation: string;
   textTransliteration?: string;
+  translations?: VerseTranslation[];
+  transliteration?: string;
 }
+
+export interface VerseTranslation {
+  authorName: string;
+  text: string;
+  isPremium?: boolean;
+}
+
+export interface QuranTranslationInfo {
+  authorName: string;
+  isPremium: boolean;
+}
+
+export interface QuranReciter {
+  id: string;
+  name: string;
+  slug: string;
+  nameArabic?: string;
+  style?: string;
+  isPremium: boolean;
+}
+
+export interface AudioUrl {
+  verseNumber: number;
+  url: string;
+}
+
+export type ScriptType = 'simple' | 'uthmani' | 'indopak';
 
 export interface Bookmark {
   id: string;

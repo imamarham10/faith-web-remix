@@ -7,6 +7,7 @@ import type { User } from '../types';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isPremium: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string, phone: string) => Promise<void>;
@@ -14,6 +15,7 @@ interface AuthContextType {
   requestOTP: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   clearAuth: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +40,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       try {
         const response = await authAPI.getProfile();
-        setUser(response.data?.data || response.data?.user || response.data);
+        const profileData = response.data?.data || response.data?.user || response.data;
+        setUser({
+          ...profileData,
+          id: profileData.userId || profileData.id,
+          name: profileData.name || profileData.email || '',
+          roles: profileData.roles || [],
+          permissions: profileData.permissions || [],
+        });
       } catch (error: any) {
         if (error.response?.status === 401) {
           // Access token expired — try refreshing before giving up
@@ -62,7 +71,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               // Retry profile fetch with new token
               if (newAccessToken) {
                 const retryRes = await authAPI.getProfile();
-                setUser(retryRes.data?.data || retryRes.data?.user || retryRes.data);
+                const retryData = retryRes.data?.data || retryRes.data?.user || retryRes.data;
+                setUser({
+                  ...retryData,
+                  id: retryData.userId || retryData.id,
+                  name: retryData.name || retryData.email || '',
+                  roles: retryData.roles || [],
+                  permissions: retryData.permissions || [],
+                });
               }
             } catch {
               // Refresh also failed — tokens are truly invalid
@@ -138,6 +154,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await authAPI.getProfile();
+      const profileData = response.data?.data || response.data?.user || response.data;
+      setUser({
+        ...profileData,
+        id: profileData.userId || profileData.id,
+        name: profileData.name || profileData.email || '',
+        roles: profileData.roles || [],
+        permissions: profileData.permissions || [],
+      });
+    } catch {
+      // Silently fail — user state stays as-is
+    }
+  };
+
   // Listen for token clearing events from axios interceptor
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -153,11 +185,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  const isPremium = user?.roles?.includes('premium_user') || user?.roles?.includes('admin') || false;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
+        isPremium,
         isLoading,
         login,
         register,
@@ -165,6 +200,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         requestOTP,
         logout,
         clearAuth,
+        refreshUser,
       }}
     >
       {children}

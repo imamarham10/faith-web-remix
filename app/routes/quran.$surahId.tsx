@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useParams, useSearchParams, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -11,11 +11,23 @@ import {
   ChevronRight,
   Copy,
   Check,
+  Volume2,
+  Lock,
+  Languages,
+  Type,
 } from "lucide-react";
 import { quranAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
-import type { Surah, Verse } from "~/types";
+import type { Surah, Verse, QuranTranslationInfo, QuranReciter, AudioUrl, ScriptType } from "~/types";
 import { JsonLd } from "~/components/JsonLd";
+import { PremiumBadge } from "~/components/PremiumGate";
+import { AudioPlayer } from "~/components/AudioPlayer";
+
+const SCRIPT_OPTIONS: { value: ScriptType; label: string }[] = [
+  { value: 'simple', label: 'Simple' },
+  { value: 'uthmani', label: 'Uthmani' },
+  { value: 'indopak', label: 'Indo-Pak' },
+];
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -66,7 +78,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function SurahDetailPage() {
   const { surahId } = useParams();
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
   const loaderData = useLoaderData<typeof loader>();
   const [surah, setSurah] = useState<Surah | null>(loaderData?.surah || null);
   const [verses, setVerses] = useState<Verse[]>(loaderData?.verses || []);
@@ -78,6 +90,20 @@ export default function SurahDetailPage() {
   const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
   const [allVersesLoaded, setAllVersesLoaded] = useState(!loaderData?.hasMore);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Script selector state
+  const [selectedScript, setSelectedScript] = useState<ScriptType>('simple');
+  const scriptCache = useRef<Record<string, Record<number, string>>>({});
+
+  // Premium features state
+  const [availableTranslations, setAvailableTranslations] = useState<QuranTranslationInfo[]>([]);
+  const [selectedTranslations, setSelectedTranslations] = useState<string[]>(['Saheeh International']);
+  const [showTransliteration, setShowTransliteration] = useState(false);
+  const [reciters, setReciters] = useState<QuranReciter[]>([]);
+  const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
+  const [audioUrls, setAudioUrls] = useState<AudioUrl[]>([]);
+  const [isAudioActive, setIsAudioActive] = useState(false);
+  const [currentAudioVerse, setCurrentAudioVerse] = useState(1);
 
   useEffect(() => {
     if (!surahId) return;
@@ -166,6 +192,149 @@ export default function SurahDetailPage() {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [allVersesLoaded, loading, surahId, loadingMore]);
+
+  // Fetch available translations and reciters (public endpoints)
+  useEffect(() => {
+    quranAPI.getAvailableTranslations().then((res) => {
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) setAvailableTranslations(data);
+    }).catch(() => {});
+    quranAPI.getReciters().then((res) => {
+      const data = res.data?.data || res.data;
+      if (Array.isArray(data)) setReciters(data);
+    }).catch(() => {});
+  }, []);
+
+  // Re-fetch verses when script changes
+  useEffect(() => {
+    if (!surahId || selectedScript === 'simple') {
+      // Reset to original loader data for 'simple'
+      if (selectedScript === 'simple' && loaderData?.verses) {
+        setVerses((prev) =>
+          prev.map((v) => {
+            const orig = loaderData.verses.find(
+              (lv: Verse) => lv.verseNumber === v.verseNumber
+            );
+            return orig ? { ...v, textArabic: orig.textArabic } : v;
+          })
+        );
+      }
+      return;
+    }
+
+    // Check cache first
+    const cached = scriptCache.current[selectedScript];
+    if (cached) {
+      setVerses((prev) =>
+        prev.map((v) => ({
+          ...v,
+          textArabic: cached[v.verseNumber] || v.textArabic,
+        }))
+      );
+      return;
+    }
+
+    quranAPI
+      .getSurah(Number(surahId), selectedScript)
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        if (data?.verses) {
+          const cache: Record<number, string> = {};
+          for (const pv of data.verses) {
+            const num = pv.verseNumber || pv.verse_number;
+            cache[num] = pv.textArabic || pv.text_arabic || '';
+          }
+          scriptCache.current[selectedScript] = cache;
+          setVerses((prev) =>
+            prev.map((v) => ({
+              ...v,
+              textArabic: cache[v.verseNumber] || v.textArabic,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, [selectedScript, surahId]);
+
+  // Lazy-load Nastaliq font when Indo-Pak script is selected
+  useEffect(() => {
+    if (selectedScript !== 'indopak') return;
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('nastaliq-font')) return;
+    const link = document.createElement('link');
+    link.id = 'nastaliq-font';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap';
+    document.head.appendChild(link);
+  }, [selectedScript]);
+
+  // Fetch premium translations when user selects additional ones
+  useEffect(() => {
+    if (!isPremium || !surahId) return;
+    if (selectedTranslations.length <= 1 && !showTransliteration) return;
+
+    quranAPI.getSurahPremium(Number(surahId), selectedTranslations, showTransliteration)
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        if (data?.verses) {
+          setVerses((prev) =>
+            prev.map((v) => {
+              const match = data.verses.find(
+                (pv: any) => (pv.verseNumber || pv.verse_number) === v.verseNumber
+              );
+              if (!match) return v;
+              return {
+                ...v,
+                translations: match.translations?.map((t: any) => ({
+                  authorName: t.authorName || t.author_name,
+                  text: t.text,
+                })),
+                transliteration: match.transliteration?.text,
+              };
+            })
+          );
+        }
+      })
+      .catch(() => {});
+  }, [isPremium, selectedTranslations, showTransliteration, surahId]);
+
+  const toggleTranslation = (authorName: string) => {
+    setSelectedTranslations((prev) => {
+      if (prev.includes(authorName)) {
+        return prev.length > 1 ? prev.filter((t) => t !== authorName) : prev;
+      }
+      return [...prev, authorName];
+    });
+  };
+
+  const handlePlayAudio = async () => {
+    if (!isPremium || !surahId) return;
+    try {
+      const res = await quranAPI.getSurahAudio(Number(surahId), selectedReciter);
+      const data = res.data?.data || res.data;
+      if (data?.urls) {
+        setAudioUrls(data.urls);
+        setCurrentAudioVerse(1);
+        setIsAudioActive(true);
+      }
+    } catch {}
+  };
+
+  const handleReciterChange = async (slug: string) => {
+    setSelectedReciter(slug);
+    if (!isAudioActive || !surahId) return;
+    try {
+      const res = await quranAPI.getSurahAudio(Number(surahId), slug);
+      const data = res.data?.data || res.data;
+      if (data?.urls) setAudioUrls(data.urls);
+    } catch {}
+  };
+
+  const handleAudioVerseChange = (verseNum: number) => {
+    setCurrentAudioVerse(verseNum);
+    const el = document.getElementById(`verse-${verseNum}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   // Scroll to and highlight a specific verse when ?verse=N is in the URL
   useEffect(() => {
@@ -287,6 +456,112 @@ export default function SurahDetailPage() {
       </section>
 
       <div className="container-faith py-8 md:py-12 max-w-3xl mx-auto">
+        {/* Premium Controls Toolbar */}
+        {!loading && verses.length > 0 && availableTranslations.length > 0 && (
+          <div className="card-elevated p-4 mb-6 animate-fade-in-up">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Translation selector */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-text-muted">
+                  <Languages size={14} />
+                  <span className="text-xs font-medium">Translations:</span>
+                </div>
+                {availableTranslations.map((t) => {
+                  const isSelected = selectedTranslations.includes(t.authorName);
+                  const isLocked = t.isPremium && !isPremium;
+                  return (
+                    <button
+                      key={t.authorName}
+                      onClick={() => {
+                        if (isLocked) return;
+                        toggleTranslation(t.authorName);
+                      }}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        isSelected
+                          ? 'bg-primary/10 text-primary border border-primary/20'
+                          : isLocked
+                            ? 'bg-black/3 text-text-muted cursor-not-allowed border border-transparent'
+                            : 'bg-black/3 text-text-secondary hover:bg-black/5 border border-transparent'
+                      }`}
+                    >
+                      {t.authorName}
+                      {isLocked && <PremiumBadge />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="hidden sm:block w-px h-6 bg-border-light" />
+
+              {/* Script selector */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-text-muted">
+                  <Type size={14} />
+                  <span className="text-xs font-medium">Script:</span>
+                </div>
+                {SCRIPT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSelectedScript(opt.value)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      selectedScript === opt.value
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'bg-black/3 text-text-secondary hover:bg-black/5 border border-transparent'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="hidden sm:block w-px h-6 bg-border-light" />
+
+              {/* Transliteration toggle */}
+              <button
+                onClick={() => {
+                  if (!isPremium) return;
+                  setShowTransliteration(!showTransliteration);
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  showTransliteration
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : !isPremium
+                      ? 'bg-black/3 text-text-muted cursor-not-allowed'
+                      : 'bg-black/3 text-text-secondary hover:bg-black/5'
+                }`}
+              >
+                <Type size={12} />
+                Transliteration
+                {!isPremium && <PremiumBadge />}
+              </button>
+
+              {/* Audio button */}
+              <button
+                onClick={() => {
+                  if (!isPremium) return;
+                  if (isAudioActive) {
+                    setIsAudioActive(false);
+                    setAudioUrls([]);
+                  } else {
+                    handlePlayAudio();
+                  }
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  isAudioActive
+                    ? 'bg-primary text-white'
+                    : !isPremium
+                      ? 'bg-black/3 text-text-muted cursor-not-allowed'
+                      : 'bg-primary/10 text-primary hover:bg-primary/15 border border-primary/20'
+                }`}
+              >
+                <Volume2 size={12} />
+                {isAudioActive ? 'Stop Audio' : 'Listen'}
+                {!isPremium && <PremiumBadge />}
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex flex-col items-center py-20">
             <Loader2 size={32} className="animate-spin text-primary mb-3" />
@@ -297,7 +572,11 @@ export default function SurahDetailPage() {
             {/* Bismillah */}
             {Number(surahId) !== 9 && Number(surahId) !== 1 && (
               <div className="text-center mb-8">
-                <p className="font-amiri text-2xl sm:text-3xl text-text leading-relaxed" dir="rtl">
+                <p className={`text-text leading-relaxed ${
+                  selectedScript === 'indopak'
+                    ? 'font-nastaliq text-xl sm:text-2xl leading-[3.0]'
+                    : 'font-amiri text-2xl sm:text-3xl'
+                }`} dir="rtl">
                   بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
                 </p>
                 <p className="text-sm text-text-muted mt-2">
@@ -315,14 +594,18 @@ export default function SurahDetailPage() {
                 const isCopied = copiedVerse === verseNum;
                 const isBookmarked = bookmarkedVerse === verseNum;
 
+                const isAudioPlaying = isAudioActive && currentAudioVerse === verseNum;
+
                 return (
                   <div
                     key={verseNum}
                     id={`verse-${verseNum}`}
                     className={`card p-5 sm:p-6 transition-all duration-500 ${
-                      highlightedVerse === verseNum
-                        ? 'ring-2 ring-primary ring-offset-2 bg-primary/5'
-                        : ''
+                      isAudioPlaying
+                        ? 'ring-2 ring-amber-400 ring-offset-2 bg-amber-50/50'
+                        : highlightedVerse === verseNum
+                          ? 'ring-2 ring-primary ring-offset-2 bg-primary/5'
+                          : ''
                     }`}
                   >
                     {/* Verse Number + Actions */}
@@ -356,19 +639,45 @@ export default function SurahDetailPage() {
                     {/* Arabic Text */}
                     {arabicText && (
                       <p
-                        className="font-amiri text-2xl sm:text-[1.75rem] text-text leading-[2.2] text-right mb-4"
+                        className={`text-text text-right mb-4 ${
+                          selectedScript === 'indopak'
+                            ? 'font-nastaliq text-xl sm:text-2xl leading-[3.0]'
+                            : 'font-amiri text-2xl sm:text-[1.75rem] leading-[2.2]'
+                        }`}
                         dir="rtl"
                       >
                         {arabicText}
                       </p>
                     )}
 
-                    {/* Translation */}
-                    {translation && (
+                    {/* Transliteration (premium) */}
+                    {showTransliteration && verse.transliteration && (
+                      <p className="text-text-muted text-sm italic leading-relaxed mb-3">
+                        {verse.transliteration}
+                      </p>
+                    )}
+
+                    {/* Translations */}
+                    {verse.translations && verse.translations.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {verse.translations.map((t, idx) => (
+                          <div key={idx}>
+                            {verse.translations!.length > 1 && (
+                              <span className="text-xs font-medium text-primary/70 mb-0.5 block">
+                                {t.authorName}
+                              </span>
+                            )}
+                            <p className="text-text-secondary text-sm sm:text-[0.9375rem] leading-relaxed">
+                              {t.text}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : translation ? (
                       <p className="text-text-secondary text-sm sm:text-[0.9375rem] leading-relaxed">
                         {translation}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
@@ -414,6 +723,24 @@ export default function SurahDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Audio Player */}
+      {isAudioActive && audioUrls.length > 0 && (
+        <AudioPlayer
+          audioUrls={audioUrls}
+          currentVerseNumber={currentAudioVerse}
+          onVerseChange={handleAudioVerseChange}
+          onClose={() => {
+            setIsAudioActive(false);
+            setAudioUrls([]);
+          }}
+          reciterName={reciters.find((r) => r.slug === selectedReciter)?.name || 'Reciter'}
+          surahName={surah?.nameTransliteration || ''}
+          reciters={reciters}
+          selectedReciterSlug={selectedReciter}
+          onReciterChange={handleReciterChange}
+        />
+      )}
     </div>
   );
 }

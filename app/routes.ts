@@ -20,6 +20,7 @@ export default [
   route("feelings/:slug", "routes/feelings.detail.tsx"),
   route("duas", "routes/duas.tsx"),
   route("duas/:id", "routes/duas.$id.tsx"),
+  route("subscribe", "routes/subscribe.tsx"),
   route("settings", "routes/settings.tsx"),
   route("auth", "routes/auth.tsx", [
     route("login", "routes/auth.login.tsx"),
