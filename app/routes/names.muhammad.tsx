@@ -99,6 +99,18 @@ export default function MuhammadNamesPage() {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const { isAuthenticated } = useAuth();
 
+  // Load existing favorites for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    muhammadNamesAPI.getFavorites()
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        const ids = Array.isArray(data) ? data.map((f: any) => f.nameId ?? f.muhammadNameId ?? f.id) : [];
+        setFavorites(new Set(ids.filter(Boolean)));
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
+
   // Client-side fallback: only fetch if loader returned empty data
   useEffect(() => {
     if (names.length > 0) return;

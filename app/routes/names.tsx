@@ -100,6 +100,18 @@ export default function NamesPage() {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const { isAuthenticated } = useAuth();
 
+  // Load existing favorites for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    namesAPI.getFavorites()
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        const ids = Array.isArray(data) ? data.map((f: any) => f.nameId ?? f.allahNameId ?? f.id) : [];
+        setFavorites(new Set(ids.filter(Boolean)));
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
+
   // Client-side fallback: only fetch if loader returned empty data
   useEffect(() => {
     if (names.length > 0) return;
@@ -289,7 +301,7 @@ export default function NamesPage() {
                   <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center">
                     <span className="text-primary font-bold text-sm">{name.number}</span>
                   </div>
-                  {isAuthenticated && (
+                  {isAuthenticated ? (
                     <button
                       onClick={() => toggleFavorite(name.id)}
                       className="w-8 h-8 rounded-lg hover:bg-black/3 flex items-center justify-center transition-colors"
@@ -300,6 +312,20 @@ export default function NamesPage() {
                         className={favorites.has(name.id) ? "text-red-500 fill-red-500" : "text-text-muted"}
                       />
                     </button>
+                  ) : (
+                    <div className="relative group">
+                      <button
+                        className="w-8 h-8 rounded-lg hover:bg-black/3 flex items-center justify-center transition-colors"
+                        aria-label="Sign in to save favorites"
+                      >
+                        <Heart size={16} className="text-text-muted" />
+                      </button>
+                      <div className="absolute right-0 top-9 z-10 hidden group-hover:block">
+                        <div className="bg-text text-white text-xs rounded-lg px-3 py-1.5 whitespace-nowrap shadow-lg">
+                          Sign in to save favorites
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
 

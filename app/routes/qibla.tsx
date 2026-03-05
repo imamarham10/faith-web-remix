@@ -69,6 +69,7 @@ export default function QiblaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [heading, setHeading] = useState<number | null>(null);
+  const [compassStatus, setCompassStatus] = useState<"idle" | "requesting" | "active" | "denied" | "unsupported">("idle");
 
   // Location dropdown
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
@@ -140,23 +141,105 @@ export default function QiblaPage() {
       .finally(() => setLoading(false));
   }, [location]);
 
-  // Device orientation for compass
-  useEffect(() => {
+  // Device orientation for compass — handles iOS permission + Android absolute heading
+  const orientationCleanupRef = useRef<(() => void) | null>(null);
+
+  const startCompassListener = () => {
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.alpha !== null) {
-        setHeading(e.alpha);
+      // iOS provides webkitCompassHeading (absolute, 0=North, clockwise)
+      // Android alpha via deviceorientationabsolute is also absolute
+      const iosHeading = (e as any).webkitCompassHeading as number | undefined;
+      if (typeof iosHeading === "number" && !isNaN(iosHeading)) {
+        setHeading(iosHeading);
+      } else if (e.alpha !== null) {
+        // On Android absolute event or fallback: alpha is counter-clockwise from North
+        // Convert to clockwise compass heading
+        setHeading(e.absolute ? (360 - e.alpha) % 360 : e.alpha);
       }
     };
 
-    if (typeof window !== "undefined" && "DeviceOrientationEvent" in window) {
-      window.addEventListener("deviceorientation", handleOrientation);
-      return () => window.removeEventListener("deviceorientation", handleOrientation);
+    // Try absolute orientation first (Android Chrome)
+    let usingAbsolute = false;
+    if ("ondeviceorientationabsolute" in window) {
+      window.addEventListener("deviceorientationabsolute" as any, handleOrientation as any);
+      usingAbsolute = true;
     }
+    // Also listen on standard event (iOS uses this, and fallback for others)
+    window.addEventListener("deviceorientation", handleOrientation);
+
+    setCompassStatus("active");
+
+    const cleanup = () => {
+      if (usingAbsolute) {
+        window.removeEventListener("deviceorientationabsolute" as any, handleOrientation as any);
+      }
+      window.removeEventListener("deviceorientation", handleOrientation);
+    };
+    orientationCleanupRef.current = cleanup;
+    return cleanup;
+  };
+
+  const requestCompassPermission = async () => {
+    setCompassStatus("requesting");
+    try {
+      // iOS 13+ requires explicit permission from user gesture
+      const DOE = DeviceOrientationEvent as any;
+      if (typeof DOE.requestPermission === "function") {
+        const result = await DOE.requestPermission();
+        if (result === "granted") {
+          startCompassListener();
+        } else {
+          setCompassStatus("denied");
+        }
+      } else {
+        // Android / other browsers — just start listening
+        startCompassListener();
+      }
+    } catch {
+      setCompassStatus("denied");
+    }
+  };
+
+  // Auto-start compass on non-iOS devices; detect capability
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!("DeviceOrientationEvent" in window)) {
+      setCompassStatus("unsupported");
+      return;
+    }
+
+    const DOE = DeviceOrientationEvent as any;
+    if (typeof DOE.requestPermission === "function") {
+      // iOS — needs user gesture, so stay in "idle" and show button
+      setCompassStatus("idle");
+    } else {
+      // Android / desktop — try to start immediately
+      startCompassListener();
+      // If heading stays null after a short time, it's likely desktop
+      const timer = setTimeout(() => {
+        setHeading((prev) => {
+          if (prev === null) setCompassStatus("unsupported");
+          return prev;
+        });
+      }, 2000);
+      return () => {
+        clearTimeout(timer);
+        orientationCleanupRef.current?.();
+      };
+    }
+
+    return () => {
+      orientationCleanupRef.current?.();
+    };
   }, []);
 
   const qiblaAngle = qiblaData?.direction || 0;
   const distance = qiblaData?.distanceKm || qiblaData?.distance || 0;
-  const compassRotation = heading !== null && qiblaAngle !== null ? qiblaAngle - heading : qiblaAngle || 0;
+  // Ring rotates so N always points real-world North
+  const ringRotation = heading !== null ? -heading : 0;
+  // Arrow independently rotates to point toward Qibla
+  const arrowRotation = heading !== null ? qiblaAngle - heading : qiblaAngle;
 
   const filteredCities = citySearch.trim()
     ? POPULAR_CITIES.filter(
@@ -322,82 +405,56 @@ export default function QiblaPage() {
                 {/* Compass Ring */}
                 <div className="w-64 h-64 sm:w-72 sm:h-72 relative">
                   {/* Outer ring */}
-                  <svg
-                    viewBox="0 0 200 200"
-                    className="w-full h-full"
-                    style={{ transform: `rotate(${-compassRotation}deg)`, transition: "transform 0.3s ease" }}
-                  >
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="95"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      className="text-border"
-                    />
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="85"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="0.5"
-                      className="text-border-light"
-                    />
+                  <svg viewBox="0 0 200 200" className="w-full h-full">
+                    {/* Compass ring — rotates so N tracks real-world North */}
+                    <g style={{ transform: `rotate(${ringRotation}deg)`, transformOrigin: "100px 100px", transition: "transform 0.3s ease" }}>
+                      <circle cx="100" cy="100" r="95" fill="none" stroke="currentColor" strokeWidth="1" className="text-border" />
+                      <circle cx="100" cy="100" r="85" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-border-light" />
 
-                    {/* Direction markers */}
-                    {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
-                      const isCardinal = deg % 90 === 0;
-                      const labels: Record<number, string> = { 0: "N", 90: "E", 180: "S", 270: "W" };
-                      const rad = (deg - 90) * (Math.PI / 180);
-                      const x = 100 + 92 * Math.cos(rad);
-                      const y = 100 + 92 * Math.sin(rad);
+                      {/* Direction markers */}
+                      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+                        const isCardinal = deg % 90 === 0;
+                        const labels: Record<number, string> = { 0: "N", 90: "E", 180: "S", 270: "W" };
+                        const rad = (deg - 90) * (Math.PI / 180);
+                        const x = 100 + 92 * Math.cos(rad);
+                        const y = 100 + 92 * Math.sin(rad);
 
-                      return (
-                        <g key={deg}>
-                          {isCardinal && labels[deg] && (
-                            <text
-                              x={100 + 75 * Math.cos(rad)}
-                              y={100 + 75 * Math.sin(rad)}
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              className="fill-text-secondary"
-                              fontSize="10"
-                              fontWeight="600"
-                              style={{
-                                transform: `rotate(${compassRotation}deg)`,
-                                transformOrigin: `${100 + 75 * Math.cos(rad)}px ${100 + 75 * Math.sin(rad)}px`,
-                              }}
-                            >
-                              {labels[deg]}
-                            </text>
-                          )}
-                          <line
-                            x1={100 + (isCardinal ? 88 : 90) * Math.cos(rad)}
-                            y1={100 + (isCardinal ? 88 : 90) * Math.sin(rad)}
-                            x2={x}
-                            y2={y}
-                            stroke="currentColor"
-                            strokeWidth={isCardinal ? "2" : "1"}
-                            className={isCardinal ? "text-text-secondary" : "text-border"}
-                          />
-                        </g>
-                      );
-                    })}
+                        return (
+                          <g key={deg}>
+                            {isCardinal && labels[deg] && (
+                              <text
+                                x={100 + 75 * Math.cos(rad)}
+                                y={100 + 75 * Math.sin(rad)}
+                                textAnchor="middle"
+                                dominantBaseline="central"
+                                className="fill-text-secondary"
+                                fontSize="10"
+                                fontWeight="600"
+                                style={{
+                                  transform: `rotate(${-ringRotation}deg)`,
+                                  transformOrigin: `${100 + 75 * Math.cos(rad)}px ${100 + 75 * Math.sin(rad)}px`,
+                                }}
+                              >
+                                {labels[deg]}
+                              </text>
+                            )}
+                            <line
+                              x1={100 + (isCardinal ? 88 : 90) * Math.cos(rad)}
+                              y1={100 + (isCardinal ? 88 : 90) * Math.sin(rad)}
+                              x2={x}
+                              y2={y}
+                              stroke="currentColor"
+                              strokeWidth={isCardinal ? "2" : "1"}
+                              className={isCardinal ? "text-text-secondary" : "text-border"}
+                            />
+                          </g>
+                        );
+                      })}
+                    </g>
 
-                    {/* Qibla arrow */}
-                    <g>
-                      <line
-                        x1="100"
-                        y1="100"
-                        x2="100"
-                        y2="20"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        className="text-primary"
-                      />
+                    {/* Qibla arrow — independently points toward Kaaba */}
+                    <g style={{ transform: `rotate(${arrowRotation}deg)`, transformOrigin: "100px 100px", transition: "transform 0.3s ease" }}>
+                      <line x1="100" y1="100" x2="100" y2="20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-primary" />
                       <polygon points="100,12 94,24 106,24" fill="currentColor" className="text-primary" />
                     </g>
 
@@ -411,6 +468,38 @@ export default function QiblaPage() {
               <p className="text-sm text-text-muted">
                 {heading !== null ? "Point your device to follow the arrow" : "Qibla direction from your location"}
               </p>
+
+              {/* iOS: Show button to request compass permission */}
+              {compassStatus === "idle" && heading === null && (
+                <button
+                  onClick={requestCompassPermission}
+                  className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  <Compass size={16} />
+                  Enable Live Compass
+                </button>
+              )}
+
+              {compassStatus === "requesting" && (
+                <div className="mt-3 inline-flex items-center gap-2 text-sm text-text-muted">
+                  <Loader2 size={14} className="animate-spin" />
+                  Requesting compass access...
+                </div>
+              )}
+
+              {compassStatus === "denied" && (
+                <p className="text-xs text-text-muted mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 inline-block">
+                  <Compass size={12} className="inline mr-1 -mt-0.5 text-red-400" />
+                  Compass permission was denied. Check your browser settings to allow motion & orientation access for this site.
+                </p>
+              )}
+
+              {compassStatus === "unsupported" && (
+                <p className="text-xs text-text-muted mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-block">
+                  <Compass size={12} className="inline mr-1 -mt-0.5 text-amber-500" />
+                  Live compass rotation requires a mobile device with orientation sensors. The arrow above shows the correct Qibla bearing.
+                </p>
+              )}
             </div>
 
             {/* Info Cards */}

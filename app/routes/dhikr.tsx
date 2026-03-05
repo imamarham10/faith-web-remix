@@ -1050,6 +1050,25 @@ function GuestDhikr() {
   const [count, setCount] = useState(0);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [pulse, setPulse] = useState(false);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+
+  // Warn before leaving if user has counted
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (sessionTotal > 0) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [sessionTotal]);
+
+  // Show save prompt after reaching a meaningful count
+  useEffect(() => {
+    if (sessionTotal >= 10 && !showSavePrompt) {
+      setShowSavePrompt(true);
+    }
+  }, [sessionTotal]);
 
   const preset = PRESET_DHIKR[selectedPreset];
   const target = preset.target;
@@ -1163,6 +1182,35 @@ function GuestDhikr() {
             </p>
           )}
         </div>
+
+        {/* Prominent save prompt after meaningful counting */}
+        {showSavePrompt && (
+          <div className="card-elevated p-5 mt-4 border-2 border-primary/20 bg-primary/[0.02] animate-fade-in-up">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Moon size={18} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text mb-1">
+                  You've counted {sessionTotal} recitations!
+                </p>
+                <p className="text-xs text-text-muted mb-3">
+                  Your count will be lost if you leave this page. Sign in to save counters, set goals, and track your spiritual journey.
+                </p>
+                <Link to="/auth/login" className="btn-primary text-sm inline-flex items-center gap-2">
+                  Sign In to Save
+                </Link>
+              </div>
+              <button
+                onClick={() => setShowSavePrompt(false)}
+                className="text-text-muted hover:text-text p-1"
+                aria-label="Dismiss"
+              >
+                <span className="text-lg leading-none">&times;</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Educational Introduction */}
         <div className="card-elevated p-6 md:p-8 mt-6">
