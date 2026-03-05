@@ -31,6 +31,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
+    let cancelled = false;
+
     const checkAuth = async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -38,8 +40,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
+      // Snapshot the tokens at the start. If login() stores new tokens while
+      // this async flow is in-flight, we must NOT clear the new tokens.
+      const tokenSnapshot = token;
+
+      const tokensChanged = () =>
+        localStorage.getItem('accessToken') !== tokenSnapshot;
+
       try {
-        const response = await authAPI.getProfile();
+        // Use _skipAuthRefresh to bypass the interceptor's refresh logic.
+        // This prevents a race condition where an old token's refresh
+        // rotates/clears tokens that a concurrent login just stored.
+        const response = await authAPI.getProfile({ _skipAuthRefresh: true } as any);
+        if (cancelled) return;
         const profileData = response.data?.data || response.data?.user || response.data;
         setUser({
           ...profileData,
@@ -49,53 +62,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           permissions: profileData.permissions || [],
         });
       } catch (error: any) {
-        if (error.response?.status === 401) {
-          // Access token expired — try refreshing before giving up
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (refreshToken) {
-            try {
-              const refreshRes = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
-                refresh_token: refreshToken,
+        if (cancelled || tokensChanged()) return;
+
+        // Access token invalid/expired — try refreshing
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          try {
+            const refreshRes = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
+              refresh_token: refreshToken,
+            });
+            if (cancelled || tokensChanged()) return;
+
+            const resData = refreshRes.data?.data || refreshRes.data;
+            const newAccessToken = resData.accessToken || resData.access_token;
+            const newRefreshToken = resData.refreshToken || resData.refresh_token;
+
+            if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
+            if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+
+            // Retry profile fetch with new token
+            if (newAccessToken) {
+              const retryRes = await authAPI.getProfile({ _skipAuthRefresh: true } as any);
+              if (cancelled) return;
+              const retryData = retryRes.data?.data || retryRes.data?.user || retryRes.data;
+              setUser({
+                ...retryData,
+                id: retryData.userId || retryData.id,
+                name: retryData.name || retryData.email || '',
+                roles: retryData.roles || [],
+                permissions: retryData.permissions || [],
               });
-              const resData = refreshRes.data?.data || refreshRes.data;
-              const newAccessToken = resData.accessToken || resData.access_token;
-              const newRefreshToken = resData.refreshToken || resData.refresh_token;
-
-              if (newAccessToken) {
-                localStorage.setItem('accessToken', newAccessToken);
-              }
-              if (newRefreshToken) {
-                localStorage.setItem('refreshToken', newRefreshToken);
-              }
-
-              // Retry profile fetch with new token
-              if (newAccessToken) {
-                const retryRes = await authAPI.getProfile();
-                const retryData = retryRes.data?.data || retryRes.data?.user || retryRes.data;
-                setUser({
-                  ...retryData,
-                  id: retryData.userId || retryData.id,
-                  name: retryData.name || retryData.email || '',
-                  roles: retryData.roles || [],
-                  permissions: retryData.permissions || [],
-                });
-              }
-            } catch {
-              // Refresh also failed — tokens are truly invalid
-              localStorage.removeItem('accessToken');
-              localStorage.removeItem('refreshToken');
             }
-          } else {
-            // No refresh token available — clear access token
+          } catch {
+            if (cancelled || tokensChanged()) return;
+            // Refresh also failed and tokens haven't changed — truly invalid
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+          }
+        } else {
+          // No refresh token available — clear stale access token
+          if (!tokensChanged()) {
             localStorage.removeItem('accessToken');
           }
         }
-        // For network/server errors, keep tokens and allow retry on next navigation
       }
-      setIsLoading(false);
+      if (!cancelled) setIsLoading(false);
     };
 
     checkAuth();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (email: string, password: string) => {

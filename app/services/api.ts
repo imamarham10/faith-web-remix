@@ -51,6 +51,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Skip refresh logic for requests that opted out (e.g. checkAuth handles its own flow)
+    if (originalRequest?._skipAuthRefresh) {
+      return Promise.reject(error);
+    }
+
     // Handle 401 Unauthorized - try to refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -70,32 +75,37 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-        if (refreshToken) {
-          const response = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken,
-          });
-
-          // Handle both wrapped ({ data: { accessToken } }) and unwrapped ({ accessToken }) responses
-          const resData = response.data?.data || response.data;
-          const accessToken = resData.accessToken || resData.access_token;
-          const newRefreshToken = resData.refreshToken || resData.refresh_token;
-
-          if (accessToken) {
-            localStorage.setItem('accessToken', accessToken);
-          }
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
-          }
-
-          processQueue(null, accessToken);
+        if (!refreshToken) {
+          // No refresh token available — nothing to try
+          processQueue(error, null);
           isRefreshing = false;
-
-          // Retry original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-          return api(originalRequest);
+          return Promise.reject(error);
         }
+
+        const response = await axios.post(`${ENV.API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        // Handle both wrapped ({ data: { accessToken } }) and unwrapped ({ accessToken }) responses
+        const resData = response.data?.data || response.data;
+        const accessToken = resData.accessToken || resData.access_token;
+        const newRefreshToken = resData.refreshToken || resData.refresh_token;
+
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken);
+        }
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
+        }
+
+        processQueue(null, accessToken);
+        isRefreshing = false;
+
+        // Retry original request with new token
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
+        return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed — clear tokens but don't redirect.
         // Pages handle 401s gracefully; only auth-required features degrade.
@@ -132,8 +142,8 @@ export const authAPI = {
   logout: (refreshToken: string) =>
     api.post('/auth/logout', { refresh_token: refreshToken }),
 
-  getProfile: () =>
-    api.get('/auth/profile'),
+  getProfile: (config?: Record<string, unknown>) =>
+    api.get('/auth/profile', config),
 
   validateToken: () =>
     api.get('/auth/validate'),
