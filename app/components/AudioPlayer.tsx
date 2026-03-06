@@ -7,6 +7,7 @@ import {
   X,
   Repeat,
   ChevronDown,
+  Settings,
 } from "lucide-react";
 import type { AudioUrl, QuranReciter } from "~/types";
 
@@ -40,7 +41,10 @@ export function AudioPlayer({
   const [autoAdvance, setAutoAdvance] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showReciterMenu, setShowReciterMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // Track whether the user has interacted with the audio element (needed for iOS/Android autoplay policy)
+  const userHasInteracted = useRef(false);
 
   const currentIndex = audioUrls.findIndex(
     (a) => a.verseNumber === currentVerseNumber
@@ -55,8 +59,21 @@ export function AudioPlayer({
     if (!audio || !currentUrl) return;
     audio.src = currentUrl;
     audio.playbackRate = playbackSpeed;
-    setIsLoading(true);
     setProgress(0);
+
+    // On mobile, browsers block programmatic play() unless the user has already
+    // interacted with the audio element. Skip auto-play on mount; the user will
+    // press the play button. After that first interaction, auto-play works for
+    // verse navigation and auto-advance.
+    if (!userHasInteracted.current) {
+      setIsLoading(false);
+      setIsPlaying(false);
+      // Preload so it's ready when the user taps play
+      audio.load();
+      return;
+    }
+
+    setIsLoading(true);
     audio
       .play()
       .then(() => {
@@ -74,6 +91,20 @@ export function AudioPlayer({
     if (audioRef.current) audioRef.current.playbackRate = playbackSpeed;
   }, [playbackSpeed]);
 
+  // Close menus when tapping outside
+  useEffect(() => {
+    if (!showReciterMenu && !showMobileMenu) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-player-menu]")) {
+        setShowReciterMenu(false);
+        setShowMobileMenu(false);
+      }
+    };
+    document.addEventListener("click", handler, { capture: true });
+    return () => document.removeEventListener("click", handler, { capture: true });
+  }, [showReciterMenu, showMobileMenu]);
+
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -81,7 +112,18 @@ export function AudioPlayer({
       audio.pause();
       setIsPlaying(false);
     } else {
-      audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      userHasInteracted.current = true;
+      setIsLoading(true);
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
     }
   }, [isPlaying]);
 
@@ -105,12 +147,14 @@ export function AudioPlayer({
   };
 
   const handlePrev = () => {
+    userHasInteracted.current = true;
     if (currentIndex > 0) {
       onVerseChange(audioUrls[currentIndex - 1].verseNumber);
     }
   };
 
   const handleNext = () => {
+    userHasInteracted.current = true;
     if (currentIndex < totalVerses - 1) {
       onVerseChange(audioUrls[currentIndex + 1].verseNumber);
     }
@@ -131,6 +175,8 @@ export function AudioPlayer({
     setPlaybackSpeed(speeds[(idx + 1) % speeds.length]);
   };
 
+  const hasReciters = reciters && reciters.length > 1 && onReciterChange;
+
   return (
     <>
       <audio
@@ -139,13 +185,14 @@ export function AudioPlayer({
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
         preload="auto"
+        playsInline
       />
 
       {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border-light shadow-lg">
         {/* Progress bar */}
         <div
-          className="h-1 bg-primary/10 cursor-pointer"
+          className="h-1.5 sm:h-1 bg-primary/10 cursor-pointer"
           onClick={handleProgressClick}
         >
           <div
@@ -154,18 +201,32 @@ export function AudioPlayer({
           />
         </div>
 
-        <div className="container-faith py-3">
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Verse info */}
+        <div className="container-faith py-2.5 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Verse info — tapping reciter name opens reciter menu on mobile */}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-text truncate">
                 {surahName} - Verse {currentVerseNumber}
               </p>
               <div className="flex items-center gap-2">
-                <p className="text-xs text-text-muted truncate">
-                  {reciterName}
-                </p>
-                <span className="text-xs text-text-muted">
+                {hasReciters ? (
+                  <button
+                    data-player-menu
+                    onClick={() => {
+                      setShowReciterMenu(!showReciterMenu);
+                      setShowMobileMenu(false);
+                    }}
+                    className="text-xs text-primary truncate flex items-center gap-1 sm:pointer-events-none sm:text-text-muted"
+                  >
+                    {reciterName}
+                    <ChevronDown size={10} className="sm:hidden shrink-0" />
+                  </button>
+                ) : (
+                  <p className="text-xs text-text-muted truncate">
+                    {reciterName}
+                  </p>
+                )}
+                <span className="text-xs text-text-muted shrink-0">
                   ({currentIndex + 1}/{totalVerses})
                 </span>
               </div>
@@ -173,7 +234,7 @@ export function AudioPlayer({
 
             {/* Controls */}
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* Speed */}
+              {/* Speed — desktop */}
               <button
                 onClick={nextSpeed}
                 className="hidden sm:flex w-8 h-8 rounded-lg hover:bg-black/5 items-center justify-center transition-colors"
@@ -184,7 +245,7 @@ export function AudioPlayer({
                 </span>
               </button>
 
-              {/* Auto-advance */}
+              {/* Auto-advance — desktop */}
               <button
                 onClick={() => setAutoAdvance(!autoAdvance)}
                 className={`hidden sm:flex w-8 h-8 rounded-lg hover:bg-black/5 items-center justify-center transition-colors ${
@@ -199,7 +260,7 @@ export function AudioPlayer({
               <button
                 onClick={handlePrev}
                 disabled={currentIndex <= 0}
-                className="w-9 h-9 rounded-lg hover:bg-black/5 flex items-center justify-center transition-colors disabled:opacity-30"
+                className="w-9 h-9 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors disabled:opacity-30"
               >
                 <SkipBack size={16} className="text-text" />
               </button>
@@ -207,7 +268,7 @@ export function AudioPlayer({
               {/* Play/Pause */}
               <button
                 onClick={togglePlay}
-                className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                className="w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 active:bg-primary/80 transition-colors"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -222,14 +283,81 @@ export function AudioPlayer({
               <button
                 onClick={handleNext}
                 disabled={currentIndex >= totalVerses - 1}
-                className="w-9 h-9 rounded-lg hover:bg-black/5 flex items-center justify-center transition-colors disabled:opacity-30"
+                className="w-9 h-9 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors disabled:opacity-30"
               >
                 <SkipForward size={16} className="text-text" />
               </button>
 
-              {/* Reciter selector */}
-              {reciters && reciters.length > 1 && onReciterChange && (
-                <div className="relative hidden sm:block">
+              {/* Mobile settings button — speed, auto-advance, reciter */}
+              <div className="relative sm:hidden" data-player-menu>
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(!showMobileMenu);
+                    setShowReciterMenu(false);
+                  }}
+                  className="w-9 h-9 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors"
+                >
+                  <Settings size={16} className="text-text-secondary" />
+                </button>
+
+                {showMobileMenu && (
+                  <div className="absolute bottom-full right-0 mb-2 w-56 bg-surface rounded-xl shadow-lg border border-border-light overflow-hidden">
+                    {/* Speed */}
+                    <button
+                      onClick={nextSpeed}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/3 active:bg-black/5 transition-colors flex items-center justify-between"
+                    >
+                      <span className="text-text">Playback Speed</span>
+                      <span className="text-xs font-bold text-primary">{playbackSpeed}x</span>
+                    </button>
+
+                    {/* Auto-advance */}
+                    <button
+                      onClick={() => setAutoAdvance(!autoAdvance)}
+                      className="w-full text-left px-4 py-3 text-sm hover:bg-black/3 active:bg-black/5 transition-colors flex items-center justify-between border-t border-border-light"
+                    >
+                      <span className="text-text">Auto-advance</span>
+                      <span className={`text-xs font-medium ${autoAdvance ? "text-primary" : "text-text-muted"}`}>
+                        {autoAdvance ? "On" : "Off"}
+                      </span>
+                    </button>
+
+                    {/* Reciter list */}
+                    {hasReciters && (
+                      <>
+                        <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-text-muted bg-black/2 border-t border-border-light">
+                          Reciter
+                        </div>
+                        {reciters.map((r) => (
+                          <button
+                            key={r.slug}
+                            onClick={() => {
+                              onReciterChange!(r.slug);
+                              setShowMobileMenu(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 text-sm hover:bg-black/3 active:bg-black/5 transition-colors ${
+                              r.slug === selectedReciterSlug
+                                ? "text-primary font-medium"
+                                : "text-text"
+                            }`}
+                          >
+                            {r.name}
+                            {r.nameArabic && (
+                              <span className="text-xs text-text-muted ml-2">
+                                {r.nameArabic}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Reciter selector — desktop */}
+              {hasReciters && (
+                <div className="relative hidden sm:block" data-player-menu>
                   <button
                     onClick={() => setShowReciterMenu(!showReciterMenu)}
                     className="flex items-center gap-1 px-2 h-8 rounded-lg hover:bg-black/5 transition-colors"
@@ -245,7 +373,7 @@ export function AudioPlayer({
                         <button
                           key={r.slug}
                           onClick={() => {
-                            onReciterChange(r.slug);
+                            onReciterChange!(r.slug);
                             setShowReciterMenu(false);
                           }}
                           className={`w-full text-left px-4 py-2.5 text-sm hover:bg-black/3 transition-colors ${
@@ -277,6 +405,39 @@ export function AudioPlayer({
             </div>
           </div>
         </div>
+
+        {/* Reciter menu triggered from tapping reciter name on mobile */}
+        {showReciterMenu && hasReciters && (
+          <div
+            className="sm:hidden border-t border-border-light bg-surface max-h-48 overflow-y-auto"
+            data-player-menu
+          >
+            <div className="px-4 py-2 text-[11px] uppercase tracking-wider text-text-muted bg-black/2">
+              Change Reciter
+            </div>
+            {reciters.map((r) => (
+              <button
+                key={r.slug}
+                onClick={() => {
+                  onReciterChange!(r.slug);
+                  setShowReciterMenu(false);
+                }}
+                className={`w-full text-left px-4 py-3 text-sm hover:bg-black/3 active:bg-black/5 transition-colors ${
+                  r.slug === selectedReciterSlug
+                    ? "text-primary font-medium"
+                    : "text-text"
+                }`}
+              >
+                {r.name}
+                {r.nameArabic && (
+                  <span className="text-xs text-text-muted ml-2">
+                    {r.nameArabic}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Spacer to prevent content from being hidden behind the fixed player */}
