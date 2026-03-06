@@ -54,21 +54,21 @@ export function AudioPlayer({
 
   const currentUrl = currentIndex >= 0 ? audioUrls[currentIndex]?.url : null;
 
-  // Load and play when verse changes
+  // Auto-advance: load and play when verse changes (only after first user gesture)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentUrl) return;
 
-    // Set src — do NOT call audio.load() as it resets the "user-activated"
-    // state on iOS/Android, causing subsequent play() to fail even from gestures.
-    audio.src = currentUrl;
-    audio.playbackRate = playbackSpeed;
     setProgress(0);
     setDuration(0);
 
-    // Only auto-play if the user has already tapped play at least once.
-    // On mobile, the first play() MUST come from a direct user gesture.
+    // Only set src and auto-play if user has already tapped play once.
+    // On mobile, the FIRST play + src assignment MUST come from a direct
+    // user gesture — setting src programmatically beforehand puts the audio
+    // element in a "not user-activated" state on some mobile browsers.
     if (userHasInteracted.current) {
+      audio.src = currentUrl;
+      audio.playbackRate = playbackSpeed;
       setIsLoading(true);
       audio
         .play()
@@ -119,9 +119,11 @@ export function AudioPlayer({
     } else {
       userHasInteracted.current = true;
       setIsLoading(true);
-      if (!audio.src || audio.src === "about:blank") {
-        audio.src = currentUrl;
-      }
+      // Always set src from user gesture context — on mobile, setting src
+      // programmatically (e.g. in useEffect) puts the audio element in a
+      // "not user-activated" state, causing play() to reject even from gestures.
+      audio.src = currentUrl;
+      audio.playbackRate = playbackSpeed;
       audio
         .play()
         .then(() => {
@@ -136,7 +138,7 @@ export function AudioPlayer({
           setTimeout(() => setPlayError(false), 2000);
         });
     }
-  }, [isPlaying, currentUrl]);
+  }, [isPlaying, currentUrl, playbackSpeed]);
 
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
