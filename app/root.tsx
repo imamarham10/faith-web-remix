@@ -152,7 +152,7 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
   const metaTags: ReturnType<Route.MetaFunction> = [
     { title: pageTitle },
     { name: "description", content: pageDescription },
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
+    { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
     { name: "theme-color", content: "#1B6B4E" },
     { name: "application-name", content: "Siraat" },
     { name: "apple-mobile-web-app-capable", content: "yes" },

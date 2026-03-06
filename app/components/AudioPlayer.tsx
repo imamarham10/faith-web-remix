@@ -43,6 +43,7 @@ export function AudioPlayer({
   const [showReciterMenu, setShowReciterMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [playError, setPlayError] = useState(false);
   // Track whether the user has interacted with the audio element (needed for iOS/Android autoplay policy)
   const userHasInteracted = useRef(false);
 
@@ -106,14 +107,18 @@ export function AudioPlayer({
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || !currentUrl) return;
+    if (!audio || !currentUrl) {
+      setPlayError(true);
+      setTimeout(() => setPlayError(false), 2000);
+      return;
+    }
+    setPlayError(false);
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
     } else {
       userHasInteracted.current = true;
       setIsLoading(true);
-      // Ensure src is set (should already be from useEffect, but guard for edge cases)
       if (!audio.src || audio.src === "about:blank") {
         audio.src = currentUrl;
       }
@@ -123,9 +128,12 @@ export function AudioPlayer({
           setIsPlaying(true);
           setIsLoading(false);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.warn("Audio play failed:", err?.message);
           setIsPlaying(false);
           setIsLoading(false);
+          setPlayError(true);
+          setTimeout(() => setPlayError(false), 2000);
         });
     }
   }, [isPlaying, currentUrl]);
@@ -192,7 +200,7 @@ export function AudioPlayer({
       />
 
       {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border-light shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border-light shadow-lg safe-bottom">
         {/* Progress bar */}
         <div
           className="h-1.5 sm:h-1 bg-primary/10 cursor-pointer"
@@ -236,7 +244,7 @@ export function AudioPlayer({
             </div>
 
             {/* Controls */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0" style={{ touchAction: 'manipulation' }}>
               {/* Speed — desktop */}
               <button
                 onClick={nextSpeed}
@@ -263,7 +271,7 @@ export function AudioPlayer({
               <button
                 onClick={handlePrev}
                 disabled={currentIndex <= 0}
-                className="w-9 h-9 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors disabled:opacity-30"
+                className="w-11 h-11 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors disabled:opacity-30"
               >
                 <SkipBack size={16} className="text-text" />
               </button>
@@ -271,10 +279,17 @@ export function AudioPlayer({
               {/* Play/Pause */}
               <button
                 onClick={togglePlay}
-                className="w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 active:bg-primary/80 transition-colors"
+                className={`w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
+                  playError
+                    ? "bg-error/10 text-error ring-2 ring-error/30"
+                    : "bg-primary text-white hover:bg-primary/90 active:bg-primary/80"
+                }`}
+                aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : playError ? (
+                  <X size={18} />
                 ) : isPlaying ? (
                   <Pause size={18} />
                 ) : (
@@ -286,7 +301,7 @@ export function AudioPlayer({
               <button
                 onClick={handleNext}
                 disabled={currentIndex >= totalVerses - 1}
-                className="w-9 h-9 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors disabled:opacity-30"
+                className="w-11 h-11 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors disabled:opacity-30"
               >
                 <SkipForward size={16} className="text-text" />
               </button>
@@ -298,7 +313,7 @@ export function AudioPlayer({
                     setShowMobileMenu(!showMobileMenu);
                     setShowReciterMenu(false);
                   }}
-                  className="w-9 h-9 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors"
+                  className="w-11 h-11 rounded-lg hover:bg-black/5 active:bg-black/10 flex items-center justify-center transition-colors"
                 >
                   <Settings size={16} className="text-text-secondary" />
                 </button>
@@ -401,7 +416,7 @@ export function AudioPlayer({
               {/* Close */}
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg hover:bg-black/5 flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-lg hover:bg-black/5 flex items-center justify-center transition-colors"
               >
                 <X size={16} className="text-text-muted" />
               </button>
@@ -444,7 +459,7 @@ export function AudioPlayer({
       </div>
 
       {/* Spacer to prevent content from being hidden behind the fixed player */}
-      <div className="h-20" />
+      <div className="h-24" />
     </>
   );
 }
