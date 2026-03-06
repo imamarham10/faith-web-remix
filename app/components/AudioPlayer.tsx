@@ -57,33 +57,32 @@ export function AudioPlayer({
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentUrl) return;
+
+    // Set src — do NOT call audio.load() as it resets the "user-activated"
+    // state on iOS/Android, causing subsequent play() to fail even from gestures.
     audio.src = currentUrl;
     audio.playbackRate = playbackSpeed;
     setProgress(0);
+    setDuration(0);
 
-    // On mobile, browsers block programmatic play() unless the user has already
-    // interacted with the audio element. Skip auto-play on mount; the user will
-    // press the play button. After that first interaction, auto-play works for
-    // verse navigation and auto-advance.
-    if (!userHasInteracted.current) {
-      setIsLoading(false);
+    // Only auto-play if the user has already tapped play at least once.
+    // On mobile, the first play() MUST come from a direct user gesture.
+    if (userHasInteracted.current) {
+      setIsLoading(true);
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
+    } else {
       setIsPlaying(false);
-      // Preload so it's ready when the user taps play
-      audio.load();
-      return;
+      setIsLoading(false);
     }
-
-    setIsLoading(true);
-    audio
-      .play()
-      .then(() => {
-        setIsPlaying(true);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setIsPlaying(false);
-        setIsLoading(false);
-      });
   }, [currentUrl]);
 
   // Sync playback speed
@@ -107,13 +106,17 @@ export function AudioPlayer({
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !currentUrl) return;
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
     } else {
       userHasInteracted.current = true;
       setIsLoading(true);
+      // Ensure src is set (should already be from useEffect, but guard for edge cases)
+      if (!audio.src || audio.src === "about:blank") {
+        audio.src = currentUrl;
+      }
       audio
         .play()
         .then(() => {
@@ -125,7 +128,7 @@ export function AudioPlayer({
           setIsLoading(false);
         });
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentUrl]);
 
   const handleTimeUpdate = () => {
     const audio = audioRef.current;
@@ -184,7 +187,7 @@ export function AudioPlayer({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        preload="auto"
+        preload="metadata"
         playsInline
       />
 
