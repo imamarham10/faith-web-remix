@@ -320,9 +320,8 @@ export default function Home() {
       .then((res) => {
         const payload = res.data?.data || res.data;
         const h = payload?.hijri || payload;
-        if (h?.events && h.events.length > 0) {
-          setTodayEvents(h.events);
-        }
+        const events = Array.isArray(h?.events) ? h.events : [];
+        setTodayEvents(events);
       })
       .catch(() => {});
 
