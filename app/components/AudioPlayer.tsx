@@ -44,6 +44,7 @@ export function AudioPlayer({
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [playError, setPlayError] = useState(false);
+  const [debugMsg, setDebugMsg] = useState("");
   // Track whether the user has interacted with the audio element (needed for iOS/Android autoplay policy)
   const userHasInteracted = useRef(false);
 
@@ -108,8 +109,9 @@ export function AudioPlayer({
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !currentUrl) {
+      setDebugMsg(`no ${!audio ? 'audio' : 'url'} | urls:${audioUrls.length} idx:${currentIndex}`);
       setPlayError(true);
-      setTimeout(() => setPlayError(false), 2000);
+      setTimeout(() => setPlayError(false), 5000);
       return;
     }
     setPlayError(false);
@@ -119,23 +121,24 @@ export function AudioPlayer({
     } else {
       userHasInteracted.current = true;
       setIsLoading(true);
-      // Always set src from user gesture context — on mobile, setting src
-      // programmatically (e.g. in useEffect) puts the audio element in a
-      // "not user-activated" state, causing play() to reject even from gestures.
       audio.src = currentUrl;
       audio.playbackRate = playbackSpeed;
+      setDebugMsg(`playing: ${currentUrl.slice(-30)}`);
       audio
         .play()
         .then(() => {
           setIsPlaying(true);
           setIsLoading(false);
+          setDebugMsg("playing OK");
         })
         .catch((err) => {
-          console.warn("Audio play failed:", err?.message);
+          const msg = `${err?.name}: ${err?.message}`;
+          setDebugMsg(msg);
+          console.warn("Audio play failed:", msg);
           setIsPlaying(false);
           setIsLoading(false);
           setPlayError(true);
-          setTimeout(() => setPlayError(false), 2000);
+          setTimeout(() => setPlayError(false), 5000);
         });
     }
   }, [isPlaying, currentUrl, playbackSpeed]);
@@ -221,6 +224,9 @@ export function AudioPlayer({
               <p className="text-sm font-medium text-text truncate">
                 {surahName} - Verse {currentVerseNumber}
               </p>
+              {debugMsg && (
+                <p className="text-[10px] text-error truncate">{debugMsg}</p>
+              )}
               <div className="flex items-center gap-2">
                 {hasReciters ? (
                   <button
