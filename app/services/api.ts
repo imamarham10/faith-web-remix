@@ -277,8 +277,11 @@ export const namesAPI = {
   addFavorite: (nameId: number) =>
     api.post('/api/v1/islam/names/favorites', { nameId }),
 
+  removeFavorite: (nameId: number) =>
+    api.post('/api/v1/islam/names/favorites/remove', { nameId }),
+
   getFavorites: () =>
-    api.get('/api/v1/islam/names/favorites'),
+    api.get('/api/v1/islam/names/favorites/list'),
 };
 
 export const feelingsAPI = {
@@ -321,6 +324,9 @@ export const muhammadNamesAPI = {
 
   addFavorite: (nameId: number) =>
     api.post('/api/v1/islam/names/muhammad/favorites', { nameId }),
+
+  removeFavorite: (nameId: number) =>
+    api.post('/api/v1/islam/names/muhammad/favorites/remove', { nameId }),
 
   getFavorites: () =>
     api.get('/api/v1/islam/names/muhammad/favorites/list'),

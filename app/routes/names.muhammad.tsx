@@ -97,6 +97,7 @@ export default function MuhammadNamesPage() {
   const [loading, setLoading] = useState(loaderData.names.length === 0);
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { isAuthenticated } = useAuth();
 
   // Load existing favorites for authenticated users
@@ -163,6 +164,8 @@ export default function MuhammadNamesPage() {
   const handleFavorite = async (name: MuhammadName) => {
     if (!isAuthenticated) return;
 
+    const wasFavorited = favorites.has(name.id);
+
     // Optimistic UI -- toggle immediately
     setFavorites((prev) => {
       const next = new Set(prev);
@@ -175,15 +178,19 @@ export default function MuhammadNamesPage() {
     });
 
     try {
-      await muhammadNamesAPI.addFavorite(name.id);
+      if (wasFavorited) {
+        await muhammadNamesAPI.removeFavorite(name.id);
+      } else {
+        await muhammadNamesAPI.addFavorite(name.id);
+      }
     } catch (err) {
       // Revert on failure
       setFavorites((prev) => {
         const next = new Set(prev);
-        if (next.has(name.id)) {
-          next.delete(name.id);
-        } else {
+        if (wasFavorited) {
           next.add(name.id);
+        } else {
+          next.delete(name.id);
         }
         return next;
       });
@@ -191,12 +198,16 @@ export default function MuhammadNamesPage() {
     }
   };
 
-  const filteredNames = names.filter(
-    (name) =>
-      name.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      name.transliteration.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      name.meaning.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredNames = names.filter((name) => {
+    if (showFavoritesOnly && !favorites.has(name.id)) return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      name.name.toLowerCase().includes(q) ||
+      name.transliteration.toLowerCase().includes(q) ||
+      name.meaning.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="bg-gradient-surface min-h-screen">
@@ -292,24 +303,53 @@ export default function MuhammadNamesPage() {
       </div>
 
       <div className="container-faith pb-8 md:pb-12">
-        {/* Search */}
+        {/* Search + Filter */}
         <div className="mb-8">
-          <div className="relative max-w-md">
-            <Search
-              size={18}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-            />
-            <input
-              type="text"
-              placeholder="Search by name, transliteration, or meaning..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-field input-with-left-icon w-full"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="relative flex-1 max-w-md">
+              <Search
+                size={18}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
+              />
+              <input
+                type="text"
+                placeholder="Search by name, transliteration, or meaning..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-field input-with-left-icon w-full"
+              />
+            </div>
+            {isAuthenticated && (
+              <div className="flex rounded-xl border border-border-light overflow-hidden shrink-0">
+                <button
+                  onClick={() => setShowFavoritesOnly(false)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    !showFavoritesOnly
+                      ? "bg-primary text-white"
+                      : "bg-surface text-text-secondary hover:bg-black/3"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setShowFavoritesOnly(true)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    showFavoritesOnly
+                      ? "bg-primary text-white"
+                      : "bg-surface text-text-secondary hover:bg-black/3"
+                  }`}
+                >
+                  <Heart size={14} className={showFavoritesOnly ? "fill-white" : ""} />
+                  Favorites{favorites.size > 0 ? ` (${favorites.size})` : ""}
+                </button>
+              </div>
+            )}
           </div>
-          {searchQuery && (
+          {(searchQuery || showFavoritesOnly) && (
             <p className="text-sm text-text-muted mt-2">
-              Found {filteredNames.length} name{filteredNames.length !== 1 ? "s" : ""}
+              {showFavoritesOnly && !searchQuery
+                ? `${filteredNames.length} favorite${filteredNames.length !== 1 ? "s" : ""}`
+                : `Found ${filteredNames.length} name${filteredNames.length !== 1 ? "s" : ""}`}
             </p>
           )}
         </div>
@@ -384,10 +424,22 @@ export default function MuhammadNamesPage() {
 
         {!loading && filteredNames.length === 0 && names.length > 0 && (
           <div className="card-elevated p-12 text-center">
-            <Star size={32} className="text-text-muted mx-auto mb-3" />
-            <p className="text-text-secondary">
-              No names found matching "{searchQuery}"
-            </p>
+            {showFavoritesOnly && !searchQuery ? (
+              <>
+                <Heart size={32} className="text-text-muted mx-auto mb-3" />
+                <p className="text-text-secondary mb-1">No favorites yet</p>
+                <p className="text-text-muted text-sm">
+                  Tap the heart icon on any name to save it here
+                </p>
+              </>
+            ) : (
+              <>
+                <Star size={32} className="text-text-muted mx-auto mb-3" />
+                <p className="text-text-secondary">
+                  No names found matching "{searchQuery}"
+                </p>
+              </>
+            )}
           </div>
         )}
 

@@ -137,7 +137,7 @@ export default function QuranBookmarksPage() {
 
                 <div className="space-y-2">
                   <h3 className="text-base font-semibold text-text">
-                    Surah {b.surahId}, Verse {b.verseNumber}
+                    {b.surahNameTransliteration || `Surah ${b.surahId}`} ({b.surahId}:{b.verseNumber})
                   </h3>
 
                   {b.note && (

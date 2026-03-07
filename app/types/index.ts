@@ -124,6 +124,9 @@ export interface Bookmark {
   verseNumber: number;
   note?: string;
   createdAt: string;
+  surahName?: string;
+  surahNameArabic?: string;
+  surahNameTransliteration?: string;
 }
 
 export interface DhikrCounter {

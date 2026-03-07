@@ -1046,11 +1046,40 @@ function CreateGoalModal({
    ================================ */
 
 function GuestDhikr() {
-  const [selectedPreset, setSelectedPreset] = useState(0);
-  const [count, setCount] = useState(0);
-  const [sessionTotal, setSessionTotal] = useState(0);
+  const [selectedPreset, setSelectedPreset] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const saved = localStorage.getItem("guest_dhikr");
+      if (saved) return JSON.parse(saved).selectedPreset ?? 0;
+    } catch {}
+    return 0;
+  });
+  const [count, setCount] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const saved = localStorage.getItem("guest_dhikr");
+      if (saved) return JSON.parse(saved).count ?? 0;
+    } catch {}
+    return 0;
+  });
+  const [sessionTotal, setSessionTotal] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const saved = localStorage.getItem("guest_dhikr");
+      if (saved) return JSON.parse(saved).sessionTotal ?? 0;
+    } catch {}
+    return 0;
+  });
   const [pulse, setPulse] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+
+  // Persist state to localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("guest_dhikr", JSON.stringify({ count, sessionTotal, selectedPreset }));
+    } catch {}
+  }, [count, sessionTotal, selectedPreset]);
 
   // Warn before leaving if user has counted
   useEffect(() => {
