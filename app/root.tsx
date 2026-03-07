@@ -76,6 +76,8 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
   const feelingsSlugMatch = pathname.match(/^\/feelings\/([^/]+)$/);
   // Dynamic route: /duas/:id (must be checked BEFORE /duas)
   const duasIdMatch = pathname.match(/^\/duas\/([^/]+)$/);
+  // Dynamic route: /hadiths/:hadithId (must be checked BEFORE /hadiths)
+  const hadithIdMatch = pathname.match(/^\/hadiths\/([^/]+)$/);
 
   let noIndex = false;
   let ogType = "website";
@@ -139,6 +141,16 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
   } else if (pathname === "/contact") {
     pageTitle = "Contact Us | Siraat";
     pageDescription = "Get in touch with the Siraat team. We welcome feedback, bug reports, and community contributions.";
+  } else if (hadithIdMatch) {
+    pageTitle = "Hadith Details - Arabic Text & Translation | Siraat";
+    pageDescription = "Read this hadith with Arabic text and English translation from authenticated sources.";
+    ogType = "article";
+  } else if (pathname.startsWith("/hadiths")) {
+    pageTitle = "Hadith Collections - 36,000+ Authentic Hadiths | Siraat";
+    pageDescription = "Explore authentic hadith collections including Sahih al-Bukhari, Sahih Muslim, and 8 more. Browse, search, and save prophetic traditions with Arabic text and translation.";
+  } else if (pathname === "/subscribe") {
+    pageTitle = "Siraat Premium - Unlock Advanced Quran Features | Siraat";
+    pageDescription = "Upgrade to Siraat Premium for additional Quran translations, audio recitation by 4 reciters, transliteration, and multiple Arabic scripts. Starting at \u20B9199/month.";
   } else if (pathname.startsWith("/auth")) {
     pageTitle = "Sign In | Siraat";
     pageDescription = "Sign in to your Siraat account to track prayers, save bookmarks, and personalize your experience.";
@@ -191,7 +203,7 @@ function BreadcrumbSchema() {
 
   // Only render for known route prefixes (avoids invalid breadcrumbs on 404 pages)
   const segments = pathname.split("/").filter(Boolean);
-  const validRoots = ["prayers", "quran", "dhikr", "calendar", "qibla", "names", "feelings", "duas", "about", "privacy", "terms", "contact", "settings", "auth"];
+  const validRoots = ["prayers", "quran", "dhikr", "calendar", "qibla", "names", "feelings", "duas", "hadiths", "subscribe", "about", "privacy", "terms", "contact", "settings", "auth"];
   if (segments.length === 0 || !validRoots.includes(segments[0])) return null;
 
   const appUrl = "https://www.siraat.website";
@@ -212,6 +224,8 @@ function BreadcrumbSchema() {
     "/names/muhammad": "99 Names of Muhammad",
     "/feelings": "Feelings & Emotions",
     "/duas": "Duas & Supplications",
+    "/hadiths": "Hadith Collections",
+    "/subscribe": "Premium",
     "/about": "About",
     "/privacy": "Privacy Policy",
     "/terms": "Terms of Service",
@@ -244,6 +258,8 @@ function BreadcrumbSchema() {
         childName = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
       } else if (segments[0] === "duas") {
         childName = "Dua Details";
+      } else if (segments[0] === "hadiths") {
+        childName = "Hadith Details";
       }
       items.push({ name: childName, url: `${appUrl}${pathname}` });
     }

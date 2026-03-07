@@ -4,6 +4,7 @@ import { Crown, Check, ArrowLeft, Loader2, Shield, Sparkles, X } from "lucide-re
 import { useAuth } from "~/contexts/AuthContext";
 import { subscriptionAPI } from "~/services/api";
 import { ENV } from "~/utils/env";
+import { JsonLd } from "~/components/JsonLd";
 
 declare global {
   interface Window {
@@ -281,6 +282,41 @@ export default function SubscribePage() {
   // ---- Subscribe flow ----
   return (
     <div className="bg-gradient-surface min-h-screen">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: "Siraat Premium",
+          description:
+            "Unlock advanced Quran features including 4 additional translations, audio recitation by 4 reciters, transliteration for all verses, and multiple Arabic scripts.",
+          brand: {
+            "@type": "Organization",
+            name: "Siraat",
+            url: "https://www.siraat.website",
+          },
+          offers: [
+            {
+              "@type": "Offer",
+              name: "Monthly Plan",
+              price: "199",
+              priceCurrency: "INR",
+              url: "https://www.siraat.website/subscribe",
+              availability: "https://schema.org/InStock",
+              priceValidUntil: "2027-12-31",
+            },
+            {
+              "@type": "Offer",
+              name: "Yearly Plan",
+              price: "1999",
+              priceCurrency: "INR",
+              url: "https://www.siraat.website/subscribe",
+              availability: "https://schema.org/InStock",
+              priceValidUntil: "2027-12-31",
+            },
+          ],
+        }}
+      />
+
       {/* Hero */}
       <section className="bg-hero-gradient text-white pattern-islamic">
         <div className="container-faith py-10 md:py-14">

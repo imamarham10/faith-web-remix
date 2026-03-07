@@ -315,6 +315,35 @@ export const duasAPI = {
     api.get('/api/v1/islam/duas/daily'),
 };
 
+export const hadithsAPI = {
+  getBooks: () =>
+    api.get('/api/v1/islam/hadiths/books'),
+
+  getHadiths: (bookId?: string, page: number = 1, limit: number = 20) =>
+    api.get('/api/v1/islam/hadiths', { params: { bookId, page, limit } }),
+
+  getHadith: (id: string) =>
+    api.get(`/api/v1/islam/hadiths/${id}`),
+
+  search: (q: string) =>
+    api.get('/api/v1/islam/hadiths/search', { params: { q } }),
+
+  searchPremium: (q: string) =>
+    api.get('/api/v1/islam/hadiths/search/premium', { params: { q } }),
+
+  getDailyHadith: () =>
+    api.get('/api/v1/islam/hadiths/daily'),
+
+  addFavorite: (hadithId: string) =>
+    api.post('/api/v1/islam/hadiths/favorites', { hadithId }),
+
+  getFavorites: () =>
+    api.get('/api/v1/islam/hadiths/favorites'),
+
+  removeFavorite: (hadithId: string) =>
+    api.post('/api/v1/islam/hadiths/favorites/remove', { hadithId }),
+};
+
 export const muhammadNamesAPI = {
   getAllNames: () =>
     api.get('/api/v1/islam/names/muhammad'),

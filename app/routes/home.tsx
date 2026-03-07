@@ -15,8 +15,9 @@ import {
   Loader2,
   Flame,
   Check,
+  Library,
 } from "lucide-react";
-import { prayerAPI, calendarAPI, namesAPI, muhammadNamesAPI, dhikrAPI, quranAPI } from "~/services/api";
+import { prayerAPI, calendarAPI, namesAPI, muhammadNamesAPI, dhikrAPI, quranAPI, hadithsAPI } from "~/services/api";
 import { getDailyInspiration } from "~/utils/dailyInspiration";
 import { FeelingsWidget } from "~/components/FeelingsWidget";
 import { useAuth } from "~/contexts/AuthContext";
@@ -161,11 +162,12 @@ export async function loader() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
   const today = new Date().toISOString().split('T')[0];
 
-  const [calendarRes, eventsRes, dailyNameRes, emotionsRes] = await Promise.allSettled([
+  const [calendarRes, eventsRes, dailyNameRes, emotionsRes, dailyHadithRes] = await Promise.allSettled([
     fetch(`${API_BASE}/api/v1/islam/calendar/today`),
     fetch(`${API_BASE}/api/v1/islam/calendar/events/upcoming?days=90`),
     fetch(`${API_BASE}/api/v1/islam/names/daily`),
     fetch(`${API_BASE}/api/v1/islam/feelings`),
+    fetch(`${API_BASE}/api/v1/islam/hadiths/daily`),
   ]);
 
   // Calendar today — extract hijri date info
@@ -218,6 +220,15 @@ export async function loader() {
     } catch {}
   }
 
+  // Daily hadith
+  let dailyHadith: any = null;
+  if (dailyHadithRes.status === "fulfilled" && dailyHadithRes.value.ok) {
+    try {
+      const json = await dailyHadithRes.value.json();
+      dailyHadith = json.data || json;
+    } catch {}
+  }
+
   // Daily inspiration (deterministic by date — move to SSR to eliminate client-side API call)
   let dailyInspiration: { text: string; source: string; arabic?: string; translation?: string } | null = null;
   try {
@@ -244,7 +255,7 @@ export async function loader() {
     }
   } catch {}
 
-  return { calendarToday, upcomingEvents, dailyName, emotions, dailyInspiration };
+  return { calendarToday, upcomingEvents, dailyName, emotions, dailyInspiration, dailyHadith };
 }
 
 export default function Home() {
@@ -280,6 +291,7 @@ export default function Home() {
   const [dailyName, setDailyName] = useState<DailyName | null>(loaderData?.dailyName || null);
   const [dailyNameLoading, setDailyNameLoading] = useState(!loaderData?.dailyName);
   const [muhammadDailyName, setMuhammadDailyName] = useState<DailyName | null>(null);
+  const [dailyHadith, setDailyHadith] = useState<any>(loaderData?.dailyHadith || null);
 
   // Logged-in dashboard state
   const [prayerStreak, setPrayerStreak] = useState<number>(0);
@@ -393,6 +405,14 @@ export default function Home() {
             setMuhammadDailyName({ nameArabic, name, transliteration, meaning });
           }
         }
+      })
+      .catch(() => {});
+
+    // Fetch daily hadith (client-side fallback if SSR didn't provide it)
+    hadithsAPI.getDailyHadith()
+      .then(res => {
+        const data = res.data?.data || res.data;
+        if (data) setDailyHadith(data);
       })
       .catch(() => {});
   }, []);
@@ -888,6 +908,65 @@ export default function Home() {
         </div>
         <FeelingsWidget />
       </section>
+
+      {/* Hadith of the Day */}
+      {dailyHadith && (
+        <section className="container-faith py-8 md:py-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold font-playfair text-text">
+                Hadith of the Day
+              </h2>
+              <p className="text-text-muted text-sm mt-1">
+                Wisdom from the Prophet's traditions
+              </p>
+            </div>
+            <Link
+              to="/hadiths"
+              className="text-sm text-primary font-medium flex items-center gap-1 hover:gap-2 transition-all"
+            >
+              Browse All <ChevronRight size={14} />
+            </Link>
+          </div>
+          <Link
+            to={`/hadiths/${dailyHadith.id}`}
+            className="card-elevated p-6 sm:p-8 block group hover:border-primary/20 border border-transparent transition-all"
+          >
+            <p
+              className="font-amiri text-xl sm:text-2xl text-text text-right leading-loose line-clamp-3"
+              dir="rtl"
+            >
+              {dailyHadith.textArabic}
+            </p>
+            <p className="text-text-secondary text-sm sm:text-base leading-relaxed mt-4 line-clamp-3">
+              {dailyHadith.textEnglish}
+            </p>
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border-light">
+              <div className="flex items-center gap-2">
+                {dailyHadith.grade && (
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      dailyHadith.grade === "Sahih"
+                        ? "bg-green-500/10 text-green-700"
+                        : dailyHadith.grade === "Hasan"
+                          ? "bg-amber-500/10 text-amber-700"
+                          : "bg-red-500/10 text-red-700"
+                    }`}
+                  >
+                    {dailyHadith.grade}
+                  </span>
+                )}
+                <span className="text-xs text-text-muted">
+                  {dailyHadith.book?.name}
+                </span>
+              </div>
+              <span className="text-xs text-primary font-medium group-hover:underline">
+                Read full hadith →
+              </span>
+            </div>
+          </Link>
+        </section>
+      )}
 
       {/* Daily Inspiration + Upcoming Events */}
       <section className="container-faith py-12 md:py-16">

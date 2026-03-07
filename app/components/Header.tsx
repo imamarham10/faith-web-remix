@@ -15,6 +15,7 @@ import {
   Compass,
   Heart,
   Smile,
+  Library,
   Settings,
   Crown,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const navLinks = [
   { to: "/prayers", label: "Prayers", icon: Clock },
   { to: "/quran", label: "Quran", icon: BookOpen },
   { to: "/duas", label: "Duas", icon: BookMarked },
+  { to: "/hadiths", label: "Hadiths", icon: Library },
   { to: "/dhikr", label: "Dhikr", icon: Moon },
   { to: "/calendar", label: "Calendar", icon: Calendar },
   { to: "/qibla", label: "Qibla", icon: Compass },

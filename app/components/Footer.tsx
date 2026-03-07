@@ -10,6 +10,9 @@ import {
   Smile,
   Heart,
   ArrowRight,
+  Library,
+  HandHeart,
+  Crown,
 } from "lucide-react";
 
 const featureLinks = [
@@ -18,6 +21,8 @@ const featureLinks = [
   { label: "Dhikr Counter", to: "/dhikr", icon: Moon },
   { label: "Islamic Calendar", to: "/calendar", icon: Calendar },
   { label: "Qibla Finder", to: "/qibla", icon: Compass },
+  { label: "Duas Collection", to: "/duas", icon: HandHeart },
+  { label: "Hadith Collections", to: "/hadiths", icon: Library },
   { label: "99 Names of Allah", to: "/names", icon: Sparkles },
   { label: "Spiritual Feelings", to: "/feelings", icon: Smile },
 ];
@@ -197,6 +202,15 @@ export default function Footer() {
                   Contact
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/subscribe"
+                  className="inline-flex items-center gap-1.5 text-[0.8125rem] text-gold/80 hover:text-gold transition-colors duration-200"
+                >
+                  <Crown size={12} />
+                  Premium
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -205,7 +219,7 @@ export default function Footer() {
         <div className="mt-14 pt-6 border-t border-white/10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-[0.6875rem] text-white/60 tracking-wide">
-              &copy; {new Date().getFullYear()} All rights reserved.
+              &copy; {new Date().getFullYear()} Siraat. All rights reserved.
             </p>
             <p className="text-[0.6875rem] text-white/60 tracking-wide flex items-center gap-1.5">
               Made with{" "}

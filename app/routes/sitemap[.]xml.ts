@@ -18,6 +18,8 @@ const STATIC_PAGES: Array<{ path: string; lastmod: string; priority: string; cha
   { path: "/privacy", lastmod: "2026-02-01", priority: "0.3", changefreq: "yearly" },
   { path: "/terms", lastmod: "2026-02-01", priority: "0.3", changefreq: "yearly" },
   { path: "/contact", lastmod: "2026-02-01", priority: "0.4", changefreq: "monthly" },
+  { path: "/hadiths", lastmod: "2026-03-07", priority: "0.9", changefreq: "weekly" },
+  { path: "/subscribe", lastmod: "2026-03-01", priority: "0.5", changefreq: "monthly" },
 ];
 
 const FEELING_SLUGS = [
@@ -65,6 +67,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   } catch {
     // Skip dua pages if API unreachable
+  }
+
+  // Hadith detail pages from API (only free books to avoid massive sitemap)
+  try {
+    const apiBase = process.env.API_BASE_URL || "http://localhost:3000";
+    const booksRes = await fetch(`${apiBase}/api/v1/islam/hadiths/books`);
+    if (booksRes.ok) {
+      const booksJson = await booksRes.json();
+      const books = Array.isArray(booksJson) ? booksJson : booksJson.data || [];
+      for (const book of books) {
+        if (book.isPremium) continue; // Only index free collections
+        // Fetch hadiths for this book (first page, enough for sitemap)
+        const hadithsRes = await fetch(`${apiBase}/api/v1/islam/hadiths?bookId=${book.id}&limit=100`);
+        if (hadithsRes.ok) {
+          const hadithsJson = await hadithsRes.json();
+          const hadiths = hadithsJson.data || [];
+          for (const hadith of hadiths) {
+            if (hadith.id) {
+              urls.push(urlEntry(`${PRODUCTION_URL}/hadiths/${hadith.id}`, "2026-03-07", "0.6", "monthly"));
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Skip hadith pages if API unreachable
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;

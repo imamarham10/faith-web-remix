@@ -274,3 +274,42 @@ export interface UserPreference {
     downloadQuality?: 'standard' | 'high';
   };
 }
+
+// Hadith Collections
+export interface HadithBook {
+  id: string;
+  name: string;
+  nameArabic: string;
+  author: string;
+  authorArabic: string;
+  totalHadiths: number;
+  isPremium: boolean;
+  description?: string;
+  sortOrder: number;
+}
+
+export interface Hadith {
+  id: string;
+  bookId: string;
+  hadithNumber: number;
+  chapterTitle?: string;
+  chapterTitleArabic?: string;
+  textArabic: string;
+  textEnglish: string;
+  narratorChain?: string;
+  narratorChainArabic?: string;
+  grade?: string;
+  reference?: string;
+  book?: {
+    name: string;
+    nameArabic: string;
+  };
+}
+
+export interface PaginatedHadiths {
+  hadiths: Hadith[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
