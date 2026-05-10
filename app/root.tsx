@@ -81,8 +81,8 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     pageTitle = "Siraat for Muslims — Prayers, Quran, Hadiths & more";
     pageDescription = "Your Islamic spiritual companion: prayer times, Quran with translations, hadiths, dhikr, Hijri calendar, qibla and more.";
   } else if (pathname === "/hindu") {
-    pageTitle = "Siraat for Hindu seekers — Coming Soon";
-    pageDescription = "Mantras, Bhagavad Gita, Panchang and festivals — Siraat's Hindu spiritual companion is on the way.";
+    pageTitle = "Siraat for Hindu seekers — Sandhya, Gita & Panchang";
+    pageDescription = "Your Hindu spiritual companion. Sandhya times, Bhagavad Gita, mantras, Panchang and festivals.";
   } else if (pathname.startsWith("/islam/prayers")) {
     pageTitle = "Prayer Times & Tracking | Siraat";
     pageDescription = "Accurate prayer times based on your location with real-time countdown, prayer logging, and streak tracking.";
@@ -130,6 +130,33 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
   } else if (pathname.startsWith("/islam/duas")) {
     pageTitle = "Duas & Supplications | Siraat";
     pageDescription = "Discover duas for every occasion — morning, evening, gratitude, hardship, and more. Arabic text with translation.";
+  } else if (pathname.startsWith("/hindu/puja-times")) {
+    pageTitle = "Sandhya & Puja Times | Siraat";
+    pageDescription = "Accurate Sandhya timings based on your location with auspicious-time markers.";
+  } else if (pathname.startsWith("/hindu/scriptures")) {
+    pageTitle = "Bhagavad Gita & Hindu Scriptures | Siraat";
+    pageDescription = "Read the Bhagavad Gita, Vishnu Sahasranama, Hanuman Chalisa with Sanskrit, Hindi and English translations.";
+  } else if (pathname.startsWith("/hindu/japa")) {
+    pageTitle = "Japa & Mantra Counter | Siraat";
+    pageDescription = "Track your daily mantra recitations with mala-style counters and goals.";
+  } else if (pathname.startsWith("/hindu/panchang")) {
+    pageTitle = "Daily Panchang & Hindu Festivals | Siraat";
+    pageDescription = "Today's Tithi, Nakshatra, Yoga, Karana and Vaara with upcoming Hindu festivals.";
+  } else if (pathname.startsWith("/hindu/stotras")) {
+    pageTitle = "Stotras, Aartis & Bhajans | Siraat";
+    pageDescription = "Devotional stotras and aartis with Sanskrit text and translations.";
+  } else if (pathname.startsWith("/hindu/names")) {
+    pageTitle = "108 Names of Hindu Deities | Siraat";
+    pageDescription = "108 Names of Vishnu, Shiva, Devi, Ganesha, Hanuman and Rama with Sanskrit, transliteration and meanings.";
+  } else if (pathname.startsWith("/hindu/temples")) {
+    pageTitle = "Hindu Temple Locator | Siraat";
+    pageDescription = "Find Hindu temples near you with deity, address, and visiting information.";
+  } else if (pathname.startsWith("/hindu/feelings")) {
+    pageTitle = "Bhagavad Gita Verses for Every Emotion | Siraat";
+    pageDescription = "Find Gita verses and Hindu wisdom for every emotional state.";
+  } else if (pathname.startsWith("/hindu/stories")) {
+    pageTitle = "Hindu Sacred Stories | Siraat";
+    pageDescription = "Stories from the Puranas, Ramayana, and lives of saints — for daily reflection.";
   } else if (pathname === "/about") {
     pageTitle = "About Siraat | Siraat";
     pageDescription = "Learn about Siraat, a free Islamic spiritual companion platform with prayer times, Quran, dhikr, and more.";
@@ -227,7 +254,15 @@ function BreadcrumbSchema() {
     "/islam/feelings": "Feelings & Emotions",
     "/islam/duas": "Duas & Supplications",
     "/islam/hadiths": "Hadith Collections",
-    "/hindu": "Hindu",
+    "/hindu": "Hinduism",
+    "/hindu/puja-times": "Sandhya Times",
+    "/hindu/scriptures": "Scriptures",
+    "/hindu/japa": "Japa",
+    "/hindu/panchang": "Panchang",
+    "/hindu/stotras": "Stotras",
+    "/hindu/temples": "Temples",
+    "/hindu/feelings": "Feelings",
+    "/hindu/stories": "Sacred Stories",
     "/subscribe": "Premium",
     "/about": "About",
     "/privacy": "Privacy Policy",
@@ -257,6 +292,14 @@ function BreadcrumbSchema() {
       childName = "Dua Details";
     } else if (parent === "hadiths") {
       childName = "Hadith Details";
+    } else if (parent === "scriptures") {
+      childName = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+    } else if (parent === "stotras") {
+      childName = "Stotra Details";
+    } else if (parent === "stories") {
+      childName = "Story Details";
+    } else if (parent === "names") {
+      childName = `108 Names of ${segment.charAt(0).toUpperCase() + segment.slice(1)}`;
     } else {
       childName = segment.charAt(0).toUpperCase() + segment.slice(1);
     }
