@@ -37,8 +37,16 @@ export default [
   route("islam/hadiths", "routes/hadiths.tsx"),
   route("islam/hadiths/:hadithId", "routes/hadiths.$hadithId.tsx"),
 
-  // Faith: Hindu (placeholder)
+  // Faith: Hindu
   route("hindu", "routes/hindu.tsx"),
+  route("hindu/puja-times", "routes/hindu.puja-times.tsx"),
+  route("hindu/scriptures", "routes/hindu.scriptures.tsx"),
+  route("hindu/japa", "routes/hindu.japa.tsx"),
+  route("hindu/panchang", "routes/hindu.panchang.tsx"),
+  route("hindu/stotras", "routes/hindu.stotras.tsx"),
+  route("hindu/temples", "routes/hindu.temples.tsx"),
+  route("hindu/feelings", "routes/hindu.feelings.tsx"),
+  route("hindu/stories", "routes/hindu.stories.tsx"),
 
   // 301 redirects from old top-level Islamic paths -> /islam/*
   route("calendar", REDIRECT, { id: "redir-calendar" }),
