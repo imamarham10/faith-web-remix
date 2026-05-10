@@ -301,6 +301,56 @@ body {
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+/* ============================================
+   HINDU THEME — burgundy + gold
+   ============================================ */
+
+.bg-hero-hindu {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(232, 180, 112, 0.15), transparent 60%),
+    linear-gradient(135deg, #4A1119 0%, #6B1F2A 50%, #2A0A12 100%);
+}
+
+.pattern-kolam {
+  position: relative;
+  overflow: hidden;
+}
+
+.pattern-kolam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='%23E0B470' stroke-width='0.5' opacity='0.18'><circle cx='30' cy='30' r='4'/><circle cx='30' cy='30' r='10'/><path d='M30 0 L30 60 M0 30 L60 30 M0 0 L60 60 M60 0 L0 60'/></g></svg>");
+  background-size: 60px 60px;
+  opacity: 0.5;
+}
+
+.btn-hindu-primary {
+  background: linear-gradient(135deg, #6B1F2A 0%, #8B3344 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-hindu-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(107, 31, 42, 0.35);
+}
+
+.btn-hindu-primary:active {
+  transform: translateY(0);
+}
+
 .bg-gradient-gold {
   background: linear-gradient(135deg, var(--color-gold-dark), var(--color-gold), var(--color-gold-light));
 }
