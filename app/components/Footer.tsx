@@ -27,13 +27,28 @@ export default function Footer() {
   const dashboardHref = faithConfig.pathPrefix;
 
   // Pick a chrome that matches the page the visitor is on. Faith-specific
-  // pages keep their Islamic-green footer; neutral pages get a neutral one.
-  const shellClasses = onFaithPage
+  // pages keep their own theme; neutral pages get the umbrella twilight.
+  const shellClasses = onIslamPage
     ? "bg-hero-warm"
-    : "bg-hero-neutral";
-  const accentClass = onFaithPage ? "text-gold" : "text-[#E0B470]";
-  const accentSubtleClass = onFaithPage ? "text-gold/70" : "text-[#E0B470]/75";
-  const decorPattern = onFaithPage ? "pattern-islamic opacity-40" : "pattern-stars opacity-50";
+    : onHinduPage
+      ? "bg-hero-hindu"
+      : "bg-hero-neutral";
+
+  const accentClass = onIslamPage
+    ? "text-gold"
+    : onHinduPage
+      ? "text-[#E0B470]"
+      : "text-[#E0B470]";
+
+  const accentSubtleClass = onIslamPage
+    ? "text-gold/70"
+    : "text-[#E0B470]/75";
+
+  const decorPattern = onIslamPage
+    ? "pattern-islamic opacity-40"
+    : onHinduPage
+      ? "pattern-kolam opacity-50"
+      : "pattern-stars opacity-50";
 
   return (
     <footer className={`relative ${shellClasses} text-white overflow-hidden`}>
@@ -108,7 +123,7 @@ export default function Footer() {
               {onIslamPage
                 ? "Your Islamic spiritual companion. Prayer times, Quran, dhikr, hadiths and more — all in one place."
                 : onHinduPage
-                  ? "Mantras, scriptures, Panchang and festivals — Siraat for Hindu seekers, in development."
+                  ? "Your Hindu spiritual companion. Sandhya, scriptures, mantras, Panchang and more — all in one place."
                   : "A multi-faith spiritual companion. Choose your tradition, build your daily practice — one bridge between you and your faith."}
             </p>
           </div>
