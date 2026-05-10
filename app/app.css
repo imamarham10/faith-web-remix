@@ -8,6 +8,9 @@
 @import "@fontsource/amiri/400.css";
 @import "@fontsource/amiri/700.css";
 @import "@fontsource-variable/playfair-display";
+@import "@fontsource/noto-sans-devanagari/400.css";
+@import "@fontsource/noto-sans-devanagari/600.css";
+@import "@fontsource/noto-sans-devanagari/700.css";
 
 @theme {
   --font-jakarta: "Plus Jakarta Sans", sans-serif;
@@ -27,6 +30,15 @@
   --color-gold: #C8A55A;
   --color-gold-light: #E8D5A0;
   --color-gold-dark: #9A7B3A;
+
+  /* Hindu palette */
+  --color-hindu-primary:       #6B1F2A;
+  --color-hindu-primary-dark:  #4A1119;
+  --color-hindu-primary-light: #8B3344;
+  --color-hindu-surface-warm:  #FBF6EC;
+
+  /* Devanagari font for Sanskrit/Hindi text */
+  --font-devanagari: "Noto Sans Devanagari", serif;
 
   /* Backgrounds */
   --color-surface: #FFFFFF;
