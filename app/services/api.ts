@@ -163,6 +163,20 @@ export const authAPI = {
     api.get('/auth/validate'),
 };
 
+export const hinduPanchangAPI = {
+  getToday: (lat: number, lng: number, timezone?: string) =>
+    api.get('/api/v1/hindu/panchang/today', { params: { lat, lng, timezone } }),
+
+  getByDate: (date: string, lat: number, lng: number, timezone?: string) =>
+    api.get(`/api/v1/hindu/panchang/date/${date}`, { params: { lat, lng, timezone } }),
+
+  getMonth: (year: number, month: number, lat: number, lng: number, timezone?: string) =>
+    api.get('/api/v1/hindu/panchang/month', { params: { year, month, lat, lng, timezone } }),
+
+  getAuspicious: (lat: number, lng: number, timezone?: string, date?: string) =>
+    api.get('/api/v1/hindu/panchang/auspicious', { params: { lat, lng, timezone, date } }),
+};
+
 export const calendarAPI = {
   getToday: (timezone?: string, calendarAdjust: number = 0) =>
     api.get('/api/v1/islam/calendar/today', { params: { timezone, calendarAdjust } }),
