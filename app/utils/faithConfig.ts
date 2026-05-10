@@ -71,7 +71,7 @@ export const FAITH_CONFIGS: Record<FaithKey, FaithConfig> = {
     adherentLabel: "Hindu",
     pathPrefix: "/hindu",
     comingSoon: true,
-    tagline: "Mantras, scriptures, Panchang & festivals — coming soon",
+    tagline: "Sandhya, Gita, mantras, Panchang & festivals — built for daily practice",
     greetingEnglish: "Namaste",
     greetingNative: "नमस्ते",
     navLinks: [
