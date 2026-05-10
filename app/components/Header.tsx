@@ -22,13 +22,16 @@ export default function Header() {
   const { user, isPremium, logout } = useAuth();
 
   // On faith-specific pages (/islam/*, /hindu/*) the URL drives which nav we
-  // render — independent of the user's saved preference. This prevents an
-  // anon visitor whose preference is Hindu from seeing Hindu nav on /islam.
-  const faithConfig = location.pathname.startsWith("/islam")
+  // render — independent of the user's saved preference.
+  const onIslamPage = location.pathname.startsWith("/islam");
+  const onHinduPage = location.pathname.startsWith("/hindu");
+
+  const faithConfig = onIslamPage
     ? FAITH_CONFIGS.muslim
-    : location.pathname.startsWith("/hindu")
+    : onHinduPage
       ? FAITH_CONFIGS.hindu
       : userConfig;
+
   // The neutral landing has its own faith picker; we hide chrome nav there
   // so the page is the only thing asking the visitor to choose a tradition.
   const isNeutralLanding = location.pathname === "/";
@@ -198,7 +201,9 @@ export default function Header() {
                   className={
                     isNeutralLanding
                       ? "hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-xl bg-[#1A1238] text-white hover:bg-[#2D1B5E] transition-colors"
-                      : "hidden sm:inline-flex btn-primary text-sm px-5 py-2"
+                      : onHinduPage
+                        ? "hidden sm:inline-flex btn-hindu-primary text-sm px-5 py-2"
+                        : "hidden sm:inline-flex btn-primary text-sm px-5 py-2"
                   }
                 >
                   Sign In
