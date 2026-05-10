@@ -5,6 +5,7 @@ export interface User {
   fullName?: string;
   roles?: string[];
   permissions?: string[];
+  preferences?: UserPreference;
   createdAt: string;
   updatedAt: string;
 }

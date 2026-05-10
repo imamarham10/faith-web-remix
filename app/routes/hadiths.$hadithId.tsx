@@ -135,7 +135,7 @@ export default function HadithDetailPage() {
         <p className="text-text-secondary mb-6">
           {error || "Hadith not found"}
         </p>
-        <Link to="/hadiths" className="btn-primary">
+        <Link to="/islam/hadiths" className="btn-primary">
           Browse All Hadiths
         </Link>
       </div>
@@ -171,7 +171,7 @@ export default function HadithDetailPage() {
       <div className="bg-hero-gradient text-white pattern-islamic pt-safe-top">
         <div className="container-faith py-8 md:py-12">
           <Link
-            to="/hadiths"
+            to="/islam/hadiths"
             className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors mb-6 text-sm font-medium"
           >
             <ArrowLeft size={16} />
@@ -319,7 +319,7 @@ export default function HadithDetailPage() {
         {/* Back Link */}
         <div className="mt-6 text-center">
           <Link
-            to="/hadiths"
+            to="/islam/hadiths"
             className="inline-flex items-center gap-2 text-sm font-medium text-text-muted hover:text-primary transition-colors"
           >
             <ArrowLeft size={15} />

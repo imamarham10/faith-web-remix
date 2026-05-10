@@ -64,9 +64,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm border border-white/10">
-              <span className="text-white text-xl font-bold">S</span>
-            </div>
+            <img src="/logo.png" alt="Siraat" width={40} height={40} className="w-10 h-10 rounded-xl ring-1 ring-white/10" />
             <span className="text-white text-lg font-bold">Siraat</span>
           </Link>
 
@@ -111,9 +109,7 @@ export default function LoginPage() {
         <div className="w-full max-w-[420px] animate-fade-in-up">
           {/* Mobile Logo */}
           <Link to="/" className="lg:hidden flex items-center gap-2.5 mb-10">
-            <div className="w-9 h-9 rounded-xl bg-hero-gradient flex items-center justify-center">
-              <span className="text-white text-base font-bold">S</span>
-            </div>
+            <img src="/logo.png" alt="Siraat" width={36} height={36} className="w-9 h-9 rounded-xl" />
             <span className="text-lg font-bold text-text">Siraat</span>
           </Link>
 

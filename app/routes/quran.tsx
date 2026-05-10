@@ -215,7 +215,7 @@ export default function QuranPage() {
                   </button>
                 )}
                 <Link
-                  to="/quran/bookmarks"
+                  to="/islam/quran/bookmarks"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
                 >
                   <Bookmark size={15} />
@@ -297,7 +297,7 @@ export default function QuranPage() {
                   </button>
                 )}
                 <Link
-                  to="/quran/bookmarks"
+                  to="/islam/quran/bookmarks"
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
                 >
                   <Bookmark size={15} />

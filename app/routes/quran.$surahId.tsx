@@ -417,7 +417,7 @@ export default function SurahDetailPage() {
       <section className="bg-hero-warm text-white pattern-islamic">
         <div className="container-faith py-8 md:py-12">
           <Link
-            to="/quran"
+            to="/islam/quran"
             className="inline-flex items-center gap-2 text-white/90 hover:text-white text-sm mb-6 transition-colors"
           >
             <ArrowLeft size={16} />

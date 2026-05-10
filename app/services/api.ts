@@ -130,8 +130,22 @@ export const authAPI = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
 
-  register: (email: string, password: string, firstName: string, lastName: string, phone: string) =>
-    api.post('/auth/register', { email, password, firstName, lastName, phone }),
+  register: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    phone: string,
+    faith?: string,
+  ) =>
+    api.post('/auth/register', {
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      ...(faith ? { faith } : {}),
+    }),
 
   requestOTP: (email: string) =>
     api.post('/auth/login/request-otp', { email }),

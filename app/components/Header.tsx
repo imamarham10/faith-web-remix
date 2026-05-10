@@ -1,43 +1,38 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "~/contexts/AuthContext";
+import { useFaith } from "~/contexts/FaithContext";
+import { FAITH_CONFIGS } from "~/utils/faithConfig";
 import {
   Menu,
   X,
   User,
   LogOut,
   ChevronDown,
-  Moon,
-  BookOpen,
-  BookMarked,
-  Clock,
-  Calendar,
-  Compass,
-  Heart,
-  Smile,
-  Library,
   Settings,
   Crown,
 } from "lucide-react";
 
-const navLinks = [
-  { to: "/", label: "Home", icon: Heart },
-  { to: "/prayers", label: "Prayers", icon: Clock },
-  { to: "/quran", label: "Quran", icon: BookOpen },
-  { to: "/duas", label: "Duas", icon: BookMarked },
-  { to: "/hadiths", label: "Hadiths", icon: Library },
-  { to: "/dhikr", label: "Dhikr", icon: Moon },
-  { to: "/calendar", label: "Calendar", icon: Calendar },
-  { to: "/qibla", label: "Qibla", icon: Compass },
-  { to: "/feelings", label: "Feelings", icon: Smile },
-];
-
 export default function Header() {
+  const { config: userConfig } = useFaith();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const { user, isPremium, logout } = useAuth();
+
+  // On faith-specific pages (/islam/*, /hindu/*) the URL drives which nav we
+  // render — independent of the user's saved preference. This prevents an
+  // anon visitor whose preference is Hindu from seeing Hindu nav on /islam.
+  const faithConfig = location.pathname.startsWith("/islam")
+    ? FAITH_CONFIGS.muslim
+    : location.pathname.startsWith("/hindu")
+      ? FAITH_CONFIGS.hindu
+      : userConfig;
+  // The neutral landing has its own faith picker; we hide chrome nav there
+  // so the page is the only thing asking the visitor to choose a tradition.
+  const isNeutralLanding = location.pathname === "/";
+  const navLinks = isNeutralLanding ? [] : faithConfig.navLinks;
 
   useEffect(() => {
     let ticking = false;
@@ -66,10 +61,14 @@ export default function Header() {
     };
   }, [mobileOpen]);
 
-  const isActive = (path: string) =>
-    path === "/"
-      ? location.pathname === "/"
-      : location.pathname.startsWith(path);
+  const isActive = (path: string) => {
+    // Faith-specific home (e.g. /islam, /hindu) needs exact match so it doesn't
+    // light up for every sub-route.
+    if (path === faithConfig.pathPrefix || path === "/") {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <>
@@ -84,14 +83,18 @@ export default function Header() {
           <div className="flex items-center justify-between h-16 md:h-[4.5rem]">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-hero-gradient flex items-center justify-center shadow-sm">
-                <span className="text-white text-lg">&#9789;</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Siraat"
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-xl shadow-sm"
+              />
               <div>
                 <span className="text-lg font-bold tracking-tight text-text">
                   Siraat
                 </span>
-                <span className="text-lg font-light tracking-tight text-primary ml-0.5">
+                <span className="text-lg font-light tracking-tight text-[#9A7B3A] ml-0.5">
                   - A Bridge
                 </span>
               </div>
@@ -192,7 +195,11 @@ export default function Header() {
               ) : (
                 <Link
                   to="/auth/login"
-                  className="hidden sm:inline-flex btn-primary text-sm px-5 py-2"
+                  className={
+                    isNeutralLanding
+                      ? "hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-xl bg-[#1A1238] text-white hover:bg-[#2D1B5E] transition-colors"
+                      : "hidden sm:inline-flex btn-primary text-sm px-5 py-2"
+                  }
                 >
                   Sign In
                 </Link>
@@ -220,9 +227,13 @@ export default function Header() {
         <div className="p-5">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-hero-gradient flex items-center justify-center">
-                <span className="text-white text-lg">&#9789;</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Siraat"
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-xl"
+              />
               <span className="text-lg font-bold text-text">Siraat</span>
             </div>
             <button

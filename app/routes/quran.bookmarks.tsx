@@ -62,7 +62,7 @@ export default function QuranBookmarksPage() {
         <div className="container-faith py-10 md:py-14">
           <div className="animate-fade-in-up">
             <Link
-              to="/quran"
+              to="/islam/quran"
               className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm mb-5 transition-colors"
             >
               <ArrowLeft size={15} />
@@ -104,7 +104,7 @@ export default function QuranBookmarksPage() {
             <p className="text-text-secondary text-sm mb-6">
               Start reading the Quran and save verses you love.
             </p>
-            <Link to="/quran" className="btn-primary inline-block">
+            <Link to="/islam/quran" className="btn-primary inline-block">
               Browse the Quran
             </Link>
           </div>

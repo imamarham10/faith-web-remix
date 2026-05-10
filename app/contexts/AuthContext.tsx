@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, userPreferencesAPI } from '../services/api';
 import axios from 'axios';
 import { ENV } from '../utils/env';
-import type { User } from '../types';
+import type { User, UserPreference } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -10,12 +10,29 @@ interface AuthContextType {
   isPremium: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, firstName: string, lastName: string, phone: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    phone: string,
+    faith?: string,
+  ) => Promise<void>;
   loginWithOTP: (email: string, otp: string) => Promise<void>;
   requestOTP: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   clearAuth: () => void;
   refreshUser: () => Promise<void>;
+}
+
+async function fetchPreferencesSafe(): Promise<UserPreference | undefined> {
+  try {
+    const res = await userPreferencesAPI.getPreferences();
+    const data = res.data?.data || res.data;
+    return data as UserPreference;
+  } catch {
+    return undefined;
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,12 +71,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const response = await authAPI.getProfile({ _skipAuthRefresh: true } as any);
         if (cancelled) return;
         const profileData = response.data?.data || response.data?.user || response.data;
+        const preferences = await fetchPreferencesSafe();
+        if (cancelled) return;
         setUser({
           ...profileData,
           id: profileData.userId || profileData.id,
           name: profileData.name || profileData.email || '',
           roles: profileData.roles || [],
           permissions: profileData.permissions || [],
+          preferences,
         });
       } catch (error: any) {
         if (cancelled || tokensChanged()) return;
@@ -85,12 +105,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const retryRes = await authAPI.getProfile({ _skipAuthRefresh: true } as any);
               if (cancelled) return;
               const retryData = retryRes.data?.data || retryRes.data?.user || retryRes.data;
+              const retryPrefs = await fetchPreferencesSafe();
+              if (cancelled) return;
               setUser({
                 ...retryData,
                 id: retryData.userId || retryData.id,
                 name: retryData.name || retryData.email || '',
                 roles: retryData.roles || [],
                 permissions: retryData.permissions || [],
+                preferences: retryPrefs,
               });
             }
           } catch {
@@ -124,18 +147,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refreshToken = data.refreshToken || data.refresh_token;
     if (accessToken) localStorage.setItem('accessToken', accessToken);
     if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    setUser(data.user);
+    const preferences = await fetchPreferencesSafe();
+    setUser({ ...data.user, preferences });
   };
 
-  const register = async (email: string, password: string, firstName: string, lastName: string, phone: string) => {
-    const response = await authAPI.register(email, password, firstName, lastName, phone);
+  const register = async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    phone: string,
+    faith?: string,
+  ) => {
+    const response = await authAPI.register(email, password, firstName, lastName, phone, faith);
     const data: any = response.data?.data || response.data;
 
     const accessToken = data.accessToken || data.access_token;
     const refreshToken = data.refreshToken || data.refresh_token;
     if (accessToken) localStorage.setItem('accessToken', accessToken);
     if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    setUser(data.user);
+    const preferences = await fetchPreferencesSafe();
+    setUser({ ...data.user, preferences });
   };
 
   const requestOTP = async (email: string) => {
@@ -150,7 +182,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const refreshToken = data.refreshToken || data.refresh_token;
     if (accessToken) localStorage.setItem('accessToken', accessToken);
     if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-    setUser(data.user);
+    const preferences = await fetchPreferencesSafe();
+    setUser({ ...data.user, preferences });
   };
 
   const logout = async () => {
@@ -176,12 +209,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await authAPI.getProfile();
       const profileData = response.data?.data || response.data?.user || response.data;
+      const preferences = await fetchPreferencesSafe();
       setUser({
         ...profileData,
         id: profileData.userId || profileData.id,
         name: profileData.name || profileData.email || '',
         roles: profileData.roles || [],
         permissions: profileData.permissions || [],
+        preferences,
       });
     } catch {
       // Silently fail — user state stays as-is

@@ -87,7 +87,7 @@ export default function DuaDetailPage() {
           Something went wrong
         </h2>
         <p className="text-text-secondary mb-6">{error || "Dua not found"}</p>
-        <Link to="/duas" className="btn-primary">
+        <Link to="/islam/duas" className="btn-primary">
           Browse All Duas
         </Link>
       </div>
@@ -118,7 +118,7 @@ export default function DuaDetailPage() {
       <div className="bg-hero-gradient text-white pattern-islamic pt-safe-top">
         <div className="container-faith py-8 md:py-12">
           <Link
-            to="/duas"
+            to="/islam/duas"
             className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors mb-6 text-sm font-medium"
           >
             <ArrowLeft size={16} />
@@ -218,7 +218,7 @@ export default function DuaDetailPage() {
         {/* Back Link */}
         <div className="mt-6 text-center">
           <Link
-            to="/duas"
+            to="/islam/duas"
             className="inline-flex items-center gap-2 text-sm font-medium text-text-muted hover:text-primary transition-colors"
           >
             <ArrowLeft size={15} />

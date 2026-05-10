@@ -72,7 +72,7 @@ export default function EmotionDetail() {
         </div>
         <h2 className="text-2xl font-bold text-text mb-2">Something went wrong</h2>
         <p className="text-text-secondary mb-6">{error || "Emotion not found"}</p>
-        <Link to="/feelings" className="btn-primary">
+        <Link to="/islam/feelings" className="btn-primary">
           Browse All Feelings
         </Link>
       </div>
@@ -102,7 +102,7 @@ export default function EmotionDetail() {
         <div className="container-faith py-8 md:py-12">
           <div className="flex items-center justify-between mb-6">
             <Link
-                to="/feelings"
+                to="/islam/feelings"
                 className="inline-flex items-center gap-2 text-white/90 hover:text-white transition-colors text-sm font-medium"
             >
                 <ArrowLeft size={16} />
@@ -181,7 +181,7 @@ export default function EmotionDetail() {
         ) : (
             <div className="card-elevated p-12 text-center">
                 <p className="text-text-muted text-lg">No remedies found for this emotion yet.</p>
-                <Link to="/feelings" className="btn-secondary mt-4 inline-flex">
+                <Link to="/islam/feelings" className="btn-secondary mt-4 inline-flex">
                     Explore other feelings
                 </Link>
             </div>

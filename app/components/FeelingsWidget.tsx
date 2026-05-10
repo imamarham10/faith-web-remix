@@ -72,7 +72,7 @@ export function FeelingsWidget() {
         )}
 
         <Link 
-            to="/feelings" 
+            to="/islam/feelings" 
             className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark transition-colors group/link"
         >
             View all emotions

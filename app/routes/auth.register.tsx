@@ -15,8 +15,11 @@ import {
   Clock,
   BookOpen,
   Moon,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "~/contexts/AuthContext";
+import { useFaith } from "~/contexts/FaithContext";
+import { FAITH_CONFIGS, FAITH_KEYS, type FaithKey } from "~/utils/faithConfig";
 
 const registerSchema = z
   .object({
@@ -34,6 +37,7 @@ const registerSchema = z
       .regex(/[0-9]/, "Must contain a number")
       .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
     confirmPassword: z.string(),
+    faith: z.enum(["muslim", "hindu"]),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
@@ -51,26 +55,41 @@ const requirements = [
 
 export default function RegisterPage() {
   const { register: registerUser, isLoading } = useAuth();
+  const { faith: anonFaith, isExplicit: anonFaithExplicit } = useFaith();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+
+  // Prefill faith from the anonymous picker if the user already chose one;
+  // otherwise default to Islam (only live tradition today).
+  const defaultFaith: FaithKey = anonFaithExplicit ? anonFaith : "muslim";
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting, dirtyFields },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
+    defaultValues: { faith: defaultFaith },
   });
 
   const password = watch("password") || "";
+  const selectedFaith = watch("faith");
 
   const onRegister = async (data: RegisterForm) => {
     try {
       setError("");
-      await registerUser(data.email, data.password, data.firstName, data.lastName, data.phone);
-      navigate("/");
+      await registerUser(
+        data.email,
+        data.password,
+        data.firstName,
+        data.lastName,
+        data.phone,
+        data.faith,
+      );
+      navigate(FAITH_CONFIGS[data.faith].pathPrefix);
     } catch (err: any) {
       const msg = err.response?.data?.message;
       setError(Array.isArray(msg) ? msg[0] : msg || "Registration failed. Please try again.");
@@ -87,9 +106,7 @@ export default function RegisterPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm border border-white/10">
-              <span className="text-white text-xl font-bold">S</span>
-            </div>
+            <img src="/logo.png" alt="Siraat" width={40} height={40} className="w-10 h-10 rounded-xl ring-1 ring-white/10" />
             <span className="text-white text-lg font-bold">Siraat</span>
           </Link>
 
@@ -134,9 +151,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-[420px] animate-fade-in-up">
           {/* Mobile Logo */}
           <Link to="/" className="lg:hidden flex items-center gap-2.5 mb-10">
-            <div className="w-9 h-9 rounded-xl bg-hero-gradient flex items-center justify-center">
-              <span className="text-white text-base font-bold">S</span>
-            </div>
+            <img src="/logo.png" alt="Siraat" width={36} height={36} className="w-9 h-9 rounded-xl" />
             <span className="text-lg font-bold text-text">Siraat</span>
           </Link>
 
@@ -155,6 +170,56 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit(onRegister)} className="space-y-5">
+            {/* Faith picker */}
+            <div>
+              <label className="text-sm font-medium text-text mb-1.5 block">
+                Your tradition
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {FAITH_KEYS.map((key) => {
+                  const cfg = FAITH_CONFIGS[key];
+                  const active = selectedFaith === key;
+                  return (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() =>
+                        setValue("faith", key, { shouldValidate: true, shouldDirty: true })
+                      }
+                      className={`relative text-left px-3.5 py-3 rounded-xl border transition-all ${
+                        active
+                          ? "border-primary bg-primary-50 text-primary"
+                          : "border-border-light bg-surface text-text-secondary hover:border-border hover:bg-black/[0.02]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold">{cfg.displayName}</p>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {cfg.adherentLabel}
+                            {cfg.comingSoon ? " · coming soon" : ""}
+                          </p>
+                        </div>
+                        {cfg.comingSoon && !active && (
+                          <Sparkles size={14} className="text-text-muted" />
+                        )}
+                        {active && <Check size={16} className="text-primary" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.faith && (
+                <p className="text-error text-xs mt-1.5">{errors.faith.message as string}</p>
+              )}
+              {selectedFaith === "hindu" && (
+                <p className="text-xs text-text-muted mt-2 leading-relaxed">
+                  Hindu content is in development. You can sign up now and we'll
+                  notify you the moment it launches.
+                </p>
+              )}
+            </div>
+
             {/* First + Last name side by side */}
             <div className="grid grid-cols-2 gap-3">
               <div>

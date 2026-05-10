@@ -4,21 +4,23 @@ const PRODUCTION_URL = "https://www.siraat.website";
 
 // Static pages with realistic last-modified dates and priority
 const STATIC_PAGES: Array<{ path: string; lastmod: string; priority: string; changefreq: string }> = [
-  { path: "/", lastmod: "2026-02-26", priority: "1.0", changefreq: "daily" },
-  { path: "/prayers", lastmod: "2026-02-20", priority: "0.9", changefreq: "daily" },
-  { path: "/quran", lastmod: "2026-02-15", priority: "0.9", changefreq: "weekly" },
-  { path: "/duas", lastmod: "2026-02-15", priority: "0.8", changefreq: "weekly" },
-  { path: "/dhikr", lastmod: "2026-02-20", priority: "0.8", changefreq: "weekly" },
-  { path: "/calendar", lastmod: "2026-02-20", priority: "0.8", changefreq: "daily" },
-  { path: "/qibla", lastmod: "2026-02-10", priority: "0.7", changefreq: "monthly" },
-  { path: "/feelings", lastmod: "2026-02-15", priority: "0.8", changefreq: "weekly" },
-  { path: "/names", lastmod: "2026-02-15", priority: "0.8", changefreq: "monthly" },
-  { path: "/names/muhammad", lastmod: "2026-02-15", priority: "0.8", changefreq: "monthly" },
+  { path: "/", lastmod: "2026-05-10", priority: "1.0", changefreq: "daily" },
+  { path: "/islam", lastmod: "2026-05-10", priority: "0.95", changefreq: "daily" },
+  { path: "/hindu", lastmod: "2026-05-10", priority: "0.6", changefreq: "monthly" },
+  { path: "/islam/prayers", lastmod: "2026-02-20", priority: "0.9", changefreq: "daily" },
+  { path: "/islam/quran", lastmod: "2026-02-15", priority: "0.9", changefreq: "weekly" },
+  { path: "/islam/duas", lastmod: "2026-02-15", priority: "0.8", changefreq: "weekly" },
+  { path: "/islam/dhikr", lastmod: "2026-02-20", priority: "0.8", changefreq: "weekly" },
+  { path: "/islam/calendar", lastmod: "2026-02-20", priority: "0.8", changefreq: "daily" },
+  { path: "/islam/qibla", lastmod: "2026-02-10", priority: "0.7", changefreq: "monthly" },
+  { path: "/islam/feelings", lastmod: "2026-02-15", priority: "0.8", changefreq: "weekly" },
+  { path: "/islam/names", lastmod: "2026-02-15", priority: "0.8", changefreq: "monthly" },
+  { path: "/islam/names/muhammad", lastmod: "2026-02-15", priority: "0.8", changefreq: "monthly" },
   { path: "/about", lastmod: "2026-02-01", priority: "0.5", changefreq: "monthly" },
   { path: "/privacy", lastmod: "2026-02-01", priority: "0.3", changefreq: "yearly" },
   { path: "/terms", lastmod: "2026-02-01", priority: "0.3", changefreq: "yearly" },
   { path: "/contact", lastmod: "2026-02-01", priority: "0.4", changefreq: "monthly" },
-  { path: "/hadiths", lastmod: "2026-03-07", priority: "0.9", changefreq: "weekly" },
+  { path: "/islam/hadiths", lastmod: "2026-03-07", priority: "0.9", changefreq: "weekly" },
   { path: "/subscribe", lastmod: "2026-03-01", priority: "0.5", changefreq: "monthly" },
 ];
 
@@ -41,12 +43,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Quran surahs — content is static, low changefreq
   for (let i = 1; i <= 114; i++) {
-    urls.push(urlEntry(`${PRODUCTION_URL}/quran/${i}`, "2026-02-15", "0.7", "monthly"));
+    urls.push(urlEntry(`${PRODUCTION_URL}/islam/quran/${i}`, "2026-02-15", "0.7", "monthly"));
   }
 
   // Feelings detail pages
   for (const slug of FEELING_SLUGS) {
-    urls.push(urlEntry(`${PRODUCTION_URL}/feelings/${slug}`, "2026-02-15", "0.6", "monthly"));
+    urls.push(urlEntry(`${PRODUCTION_URL}/islam/feelings/${slug}`, "2026-02-15", "0.6", "monthly"));
   }
 
   // Dua detail pages from API
@@ -60,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         const duas = cat.duas || [];
         for (const dua of duas) {
           if (dua.id) {
-            urls.push(urlEntry(`${PRODUCTION_URL}/duas/${dua.id}`, "2026-02-15", "0.6", "monthly"));
+            urls.push(urlEntry(`${PRODUCTION_URL}/islam/duas/${dua.id}`, "2026-02-15", "0.6", "monthly"));
           }
         }
       }
@@ -85,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           const hadiths = hadithsJson.data || [];
           for (const hadith of hadiths) {
             if (hadith.id) {
-              urls.push(urlEntry(`${PRODUCTION_URL}/hadiths/${hadith.id}`, "2026-03-07", "0.6", "monthly"));
+              urls.push(urlEntry(`${PRODUCTION_URL}/islam/hadiths/${hadith.id}`, "2026-03-07", "0.6", "monthly"));
             }
           }
         }

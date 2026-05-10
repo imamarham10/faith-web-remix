@@ -227,7 +227,7 @@ export default function NamesPage() {
                 Learn and reflect upon the Beautiful Names of Allah (Al-Asma ul-Husna)
               </p>
               <Link
-                to="/names/muhammad"
+                to="/islam/names/muhammad"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors border border-white/15"
               >
                 <Sparkles size={14} className="text-gold-light" />

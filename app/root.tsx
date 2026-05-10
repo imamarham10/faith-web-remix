@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { AuthProvider } from "./contexts/AuthContext";
+import { FaithProvider } from "./contexts/FaithContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Header from "./components/Header";
@@ -18,12 +19,9 @@ import Footer from "./components/Footer";
 import { JsonLd } from "./components/JsonLd";
 import { Analytics } from "@vercel/analytics/react";
 
-// Favicon with rounded square and moon icon (matching header logo)
-const faviconSvg = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%231B6B4E"/><stop offset="100%" style="stop-color:%23157347"/></linearGradient></defs><rect x="0" y="0" width="180" height="180" rx="40" fill="url(%23grad)"/><text x="90" y="115" font-size="100" text-anchor="middle" fill="white" font-family="Arial, sans-serif">☽</text></svg>`;
-
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: faviconSvg, type: "image/svg+xml" },
-  { rel: "apple-touch-icon", href: faviconSvg },
+  { rel: "icon", href: "/logo.png", type: "image/png" },
+  { rel: "apple-touch-icon", href: "/logo.png" },
 ];
 
 const SURAH_NAMES: Record<number, string> = {
@@ -67,25 +65,28 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     ];
   }
 
-  let pageTitle = "Siraat - Your Spiritual Companion";
-  let pageDescription = "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.";
+  let pageTitle = "Siraat — A spiritual companion for every faith";
+  let pageDescription = "Siraat is a multi-faith spiritual companion. Pick your tradition and access prayers, scriptures, calendars and daily reminders.";
 
-  // Dynamic route: /quran/:surahId (must be checked BEFORE /quran)
-  const surahIdMatch = pathname.match(/^\/quran\/(\d+)$/);
-  // Dynamic route: /feelings/:slug (must be checked BEFORE /feelings)
-  const feelingsSlugMatch = pathname.match(/^\/feelings\/([^/]+)$/);
-  // Dynamic route: /duas/:id (must be checked BEFORE /duas)
-  const duasIdMatch = pathname.match(/^\/duas\/([^/]+)$/);
-  // Dynamic route: /hadiths/:hadithId (must be checked BEFORE /hadiths)
-  const hadithIdMatch = pathname.match(/^\/hadiths\/([^/]+)$/);
+  // Dynamic routes are now under /islam/*. Check the dynamic forms first.
+  const surahIdMatch = pathname.match(/^\/islam\/quran\/(\d+)$/);
+  const feelingsSlugMatch = pathname.match(/^\/islam\/feelings\/([^/]+)$/);
+  const duasIdMatch = pathname.match(/^\/islam\/duas\/([^/]+)$/);
+  const hadithIdMatch = pathname.match(/^\/islam\/hadiths\/([^/]+)$/);
 
   let noIndex = false;
   let ogType = "website";
 
-  if (pathname.startsWith("/prayers")) {
+  if (pathname === "/islam") {
+    pageTitle = "Siraat for Muslims — Prayers, Quran, Hadiths & more";
+    pageDescription = "Your Islamic spiritual companion: prayer times, Quran with translations, hadiths, dhikr, Hijri calendar, qibla and more.";
+  } else if (pathname === "/hindu") {
+    pageTitle = "Siraat for Hindu seekers — Coming Soon";
+    pageDescription = "Mantras, Bhagavad Gita, Panchang and festivals — Siraat's Hindu spiritual companion is on the way.";
+  } else if (pathname.startsWith("/islam/prayers")) {
     pageTitle = "Prayer Times & Tracking | Siraat";
     pageDescription = "Accurate prayer times based on your location with real-time countdown, prayer logging, and streak tracking.";
-  } else if (pathname.startsWith("/quran/bookmarks")) {
+  } else if (pathname.startsWith("/islam/quran/bookmarks")) {
     pageTitle = "My Quran Bookmarks | Siraat";
     pageDescription = "Your saved Quran verses and bookmarks for easy reference.";
     noIndex = true;
@@ -95,22 +96,22 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     pageTitle = `${surahName} - Read with Arabic & Translation | Siraat`;
     pageDescription = `Read ${surahName} with Arabic text, English translation, and transliteration. Surah ${surahNum} of the Holy Quran.`;
     ogType = "article";
-  } else if (pathname.startsWith("/quran")) {
+  } else if (pathname.startsWith("/islam/quran")) {
     pageTitle = "The Noble Quran | Siraat";
     pageDescription = "Read the Holy Quran with Arabic text, English translation, and transliteration. Browse all 114 Surahs.";
-  } else if (pathname.startsWith("/dhikr")) {
+  } else if (pathname.startsWith("/islam/dhikr")) {
     pageTitle = "Dhikr Counter & Tracker | Siraat";
     pageDescription = "Track your daily dhikr with customizable counters, goals, and streaks. Remember Allah with ease.";
-  } else if (pathname.startsWith("/calendar")) {
+  } else if (pathname.startsWith("/islam/calendar")) {
     pageTitle = "Islamic Calendar & Hijri Dates | Siraat";
     pageDescription = "Hijri-Gregorian calendar converter with upcoming Islamic events, holidays, and important dates.";
-  } else if (pathname.startsWith("/qibla")) {
+  } else if (pathname.startsWith("/islam/qibla")) {
     pageTitle = "Qibla Direction Finder | Siraat";
     pageDescription = "Find the accurate Qibla direction from your current location using compass and GPS.";
-  } else if (pathname.startsWith("/names/muhammad")) {
+  } else if (pathname.startsWith("/islam/names/muhammad")) {
     pageTitle = "99 Names of Prophet Muhammad (SAW) | Siraat";
     pageDescription = "Explore the 99 beautiful names of Prophet Muhammad (peace be upon him) with Arabic text, transliteration, and meanings.";
-  } else if (pathname.startsWith("/names")) {
+  } else if (pathname.startsWith("/islam/names")) {
     pageTitle = "99 Names of Allah (Al-Asma ul-Husna) | Siraat";
     pageDescription = "Learn the 99 Beautiful Names of Allah with Arabic calligraphy, transliteration, meanings, and descriptions.";
   } else if (feelingsSlugMatch) {
@@ -119,14 +120,14 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     pageTitle = `Feeling ${capitalized}? Islamic Guidance | Siraat`;
     pageDescription = `Islamic remedies, duas, and Quranic verses for when you feel ${slug.replace(/-/g, " ")}.`;
     ogType = "article";
-  } else if (pathname.startsWith("/feelings")) {
+  } else if (pathname.startsWith("/islam/feelings")) {
     pageTitle = "Islamic Guidance for Your Emotions | Siraat";
     pageDescription = "Find Islamic remedies, duas, and Quranic verses for every emotional state — anxiety, sadness, gratitude, and more.";
   } else if (duasIdMatch) {
     pageTitle = "Dua Details | Siraat";
     pageDescription = "Read this beautiful dua with Arabic text, transliteration, and English translation.";
     ogType = "article";
-  } else if (pathname.startsWith("/duas")) {
+  } else if (pathname.startsWith("/islam/duas")) {
     pageTitle = "Duas & Supplications | Siraat";
     pageDescription = "Discover duas for every occasion — morning, evening, gratitude, hardship, and more. Arabic text with translation.";
   } else if (pathname === "/about") {
@@ -145,7 +146,7 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     pageTitle = "Hadith Details - Arabic Text & Translation | Siraat";
     pageDescription = "Read this hadith with Arabic text and English translation from authenticated sources.";
     ogType = "article";
-  } else if (pathname.startsWith("/hadiths")) {
+  } else if (pathname.startsWith("/islam/hadiths")) {
     pageTitle = "Hadith Collections - 36,000+ Authentic Hadiths | Siraat";
     pageDescription = "Explore authentic hadith collections including Sahih al-Bukhari, Sahih Muslim, and 8 more. Browse, search, and save prophetic traditions with Arabic text and translation.";
   } else if (pathname === "/subscribe") {
@@ -203,8 +204,8 @@ function BreadcrumbSchema() {
 
   // Only render for known route prefixes (avoids invalid breadcrumbs on 404 pages)
   const segments = pathname.split("/").filter(Boolean);
-  const validRoots = ["prayers", "quran", "dhikr", "calendar", "qibla", "names", "feelings", "duas", "hadiths", "subscribe", "about", "privacy", "terms", "contact", "settings", "auth"];
-  if (segments.length === 0 || !validRoots.includes(segments[0])) return null;
+  const validTopLevel = ["islam", "hindu", "subscribe", "about", "privacy", "terms", "contact", "settings", "auth"];
+  if (segments.length === 0 || !validTopLevel.includes(segments[0])) return null;
 
   const appUrl = "https://www.siraat.website";
 
@@ -215,16 +216,18 @@ function BreadcrumbSchema() {
 
   // Map of known routes to display names
   const routeNames: Record<string, string> = {
-    "/prayers": "Prayer Times",
-    "/quran": "Quran",
-    "/dhikr": "Dhikr Counter",
-    "/calendar": "Islamic Calendar",
-    "/qibla": "Qibla Finder",
-    "/names": "99 Names of Allah",
-    "/names/muhammad": "99 Names of Muhammad",
-    "/feelings": "Feelings & Emotions",
-    "/duas": "Duas & Supplications",
-    "/hadiths": "Hadith Collections",
+    "/islam": "Islam",
+    "/islam/prayers": "Prayer Times",
+    "/islam/quran": "Quran",
+    "/islam/dhikr": "Dhikr Counter",
+    "/islam/calendar": "Islamic Calendar",
+    "/islam/qibla": "Qibla Finder",
+    "/islam/names": "99 Names of Allah",
+    "/islam/names/muhammad": "99 Names of Muhammad",
+    "/islam/feelings": "Feelings & Emotions",
+    "/islam/duas": "Duas & Supplications",
+    "/islam/hadiths": "Hadith Collections",
+    "/hindu": "Hindu",
     "/subscribe": "Premium",
     "/about": "About",
     "/privacy": "Privacy Policy",
@@ -233,36 +236,31 @@ function BreadcrumbSchema() {
     "/settings": "Settings",
   };
 
-  // Handle multi-segment paths (e.g., /names/muhammad, /quran/1, /feelings/sad)
-  if (segments.length === 1) {
-    // Single segment: /prayers, /quran, /about, etc.
-    const name = routeNames[pathname] || segments[0].charAt(0).toUpperCase() + segments[0].slice(1);
-    items.push({ name, url: `${appUrl}${pathname}` });
-  } else if (segments.length === 2) {
-    // Two segments: /quran/1, /names/muhammad, /feelings/sad, /duas/123
-    const parentPath = `/${segments[0]}`;
-    const parentName = routeNames[parentPath] || segments[0].charAt(0).toUpperCase() + segments[0].slice(1);
-    items.push({ name: parentName, url: `${appUrl}${parentPath}` });
-
-    // Check if the full path has a known name
-    const fullName = routeNames[pathname];
-    if (fullName) {
-      items.push({ name: fullName, url: `${appUrl}${pathname}` });
-    } else {
-      // Dynamic segment — generate a readable name
-      const segment = segments[1];
-      let childName = segment;
-      if (segments[0] === "quran") {
-        childName = `Surah ${segment}`;
-      } else if (segments[0] === "feelings") {
-        childName = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
-      } else if (segments[0] === "duas") {
-        childName = "Dua Details";
-      } else if (segments[0] === "hadiths") {
-        childName = "Hadith Details";
-      }
-      items.push({ name: childName, url: `${appUrl}${pathname}` });
+  // Build breadcrumb trail by walking through path segments cumulatively.
+  let cumulative = "";
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    cumulative += `/${segment}`;
+    const knownName = routeNames[cumulative];
+    if (knownName) {
+      items.push({ name: knownName, url: `${appUrl}${cumulative}` });
+      continue;
     }
+    // Dynamic segment — derive a readable name from the parent.
+    const parent = segments[i - 1];
+    let childName = segment;
+    if (parent === "quran") {
+      childName = `Surah ${segment}`;
+    } else if (parent === "feelings") {
+      childName = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+    } else if (parent === "duas") {
+      childName = "Dua Details";
+    } else if (parent === "hadiths") {
+      childName = "Hadith Details";
+    } else {
+      childName = segment.charAt(0).toUpperCase() + segment.slice(1);
+    }
+    items.push({ name: childName, url: `${appUrl}${cumulative}` });
   }
 
   const breadcrumbData = {
@@ -290,15 +288,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           "@context": "https://schema.org",
           "@type": "WebSite",
           "name": "Siraat",
-          "alternateName": "Siraat - Your Spiritual Companion",
+          "alternateName": "Siraat - A Bridge",
           "url": "https://www.siraat.website",
-          "description": "A comprehensive Islamic spiritual companion with prayer times, Quran reader, dhikr counter, and more.",
+          "description": "Siraat is a multi-faith spiritual companion. Pick your tradition and access prayers, scriptures, calendars and daily reminders.",
           "inLanguage": "en",
           "potentialAction": {
             "@type": "SearchAction",
             "target": {
               "@type": "EntryPoint",
-              "urlTemplate": "https://www.siraat.website/quran?search={search_term_string}"
+              "urlTemplate": "https://www.siraat.website/islam/quran?search={search_term_string}"
             },
             "query-input": "required name=search_term_string"
           }
@@ -309,7 +307,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           "name": "Siraat",
           "url": "https://www.siraat.website",
           "logo": { "@type": "ImageObject", "url": "https://www.siraat.website/og-image.png", "width": 1200, "height": 630 },
-          "description": "A comprehensive Islamic spiritual companion platform.",
+          "description": "A multi-faith spiritual companion platform — bridging traditions for daily practice.",
           "foundingDate": "2026-01-01",
           "founder": { "@type": "Person", "name": "Imam Arham" }
         }} />
@@ -319,7 +317,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <LanguageProvider>
           <NotificationProvider>
             <AuthProvider>
-              {children}
+              <FaithProvider>
+                {children}
+              </FaithProvider>
             </AuthProvider>
           </NotificationProvider>
         </LanguageProvider>

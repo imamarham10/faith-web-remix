@@ -38,13 +38,11 @@ const DEFAULT_FORM: FormState = {
   notificationDailyPacket: false,
 };
 
+// Only faiths with shipped or in-flight content. Other backend-supported
+// values (christian, jewish, buddhist, sikh) are hidden until built.
 const FAITH_OPTIONS = [
-  { label: "Muslim", value: "muslim" },
-  { label: "Christian", value: "christian" },
-  { label: "Jewish", value: "jewish" },
-  { label: "Hindu", value: "hindu" },
-  { label: "Buddhist", value: "buddhist" },
-  { label: "Sikh", value: "sikh" },
+  { label: "Islam (Muslim)", value: "muslim" },
+  { label: "Hinduism (Hindu) — coming soon", value: "hindu" },
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -74,7 +72,7 @@ const TIMEZONE_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -132,6 +130,9 @@ export default function SettingsPage() {
         },
       };
       await userPreferencesAPI.updatePreferences(payload);
+      // Sync the user/preferences cache so FaithContext (and Header/Footer
+      // nav) reflect the new faith without a page reload.
+      await refreshUser();
       setSuccessMsg("Settings saved!");
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {

@@ -213,6 +213,82 @@ body {
   background: linear-gradient(135deg, #1B6B4E 0%, #134D38 50%, #0C1016 100%);
 }
 
+/* ============================================
+   NEUTRAL THEME — Multi-faith landing.
+   Faith-agnostic twilight palette so no tradition's
+   visual language dominates the platform's front door.
+   ============================================ */
+
+.bg-hero-neutral {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(224, 180, 112, 0.18), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(125, 90, 200, 0.25), transparent 70%),
+    linear-gradient(160deg, #0E1224 0%, #181845 35%, #2A1B5E 70%, #1A1238 100%);
+}
+
+.pattern-stars::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.5) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 38% 78%, rgba(255, 255, 255, 0.35) 0.4px, transparent 1px),
+    radial-gradient(circle at 72% 35%, rgba(255, 255, 255, 0.45) 0.5px, transparent 1px),
+    radial-gradient(circle at 86% 64%, rgba(255, 255, 255, 0.3) 0.4px, transparent 0.8px);
+  background-size: 280px 280px, 320px 320px, 240px 240px, 360px 360px;
+  opacity: 0.7;
+}
+
+.text-gradient-warm {
+  background: linear-gradient(135deg, #F5E5C2 0%, #E0B470 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-warm {
+  background: linear-gradient(135deg, #E0B470 0%, #C8A55A 100%);
+  color: #1A1238;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-warm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(224, 180, 112, 0.35);
+}
+.btn-warm:active { transform: translateY(0); }
+
+.btn-ghost-light {
+  background: rgba(255, 255, 255, 0.06);
+  color: #F5E5C2;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-ghost-light:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
 .bg-gradient-gold {
   background: linear-gradient(135deg, var(--color-gold-dark), var(--color-gold), var(--color-gold-light));
 }
