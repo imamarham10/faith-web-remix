@@ -207,6 +207,22 @@ export const hinduPujaTimesAPI = {
   deleteLog: (id: string) => api.delete(`/api/v1/hindu/puja-times/log/${id}`),
 };
 
+export const hinduJapaAPI = {
+  getCounters: () => api.get('/api/v1/hindu/japa/counters'),
+  createCounter: (data: { name: string; mantraSanskrit?: string; mantraEnglish?: string; targetCount?: number; deityKey?: string }) =>
+    api.post('/api/v1/hindu/japa/counters', data),
+  updateCounter: (id: string, data: { count?: number; name?: string; targetCount?: number; isActive?: boolean }) =>
+    api.patch(`/api/v1/hindu/japa/counters/${id}`, data),
+  deleteCounter: (id: string) => api.delete(`/api/v1/hindu/japa/counters/${id}`),
+  getGoals: () => api.get('/api/v1/hindu/japa/goals'),
+  createGoal: (data: { mantraSanskrit: string; targetCount: number; period: 'daily'|'weekly'|'monthly'; startDate: string; endDate: string }) =>
+    api.post('/api/v1/hindu/japa/goals', data),
+  getHistory: () => api.get('/api/v1/hindu/japa/history'),
+  getStats: () => api.get('/api/v1/hindu/japa/stats'),
+  getMantras: (category?: string, deity?: string) =>
+    api.get('/api/v1/hindu/japa/mantras', { params: { category, deity } }),
+};
+
 export const calendarAPI = {
   getToday: (timezone?: string, calendarAdjust: number = 0) =>
     api.get('/api/v1/islam/calendar/today', { params: { timezone, calendarAdjust } }),
