@@ -175,6 +175,15 @@ export const hinduPanchangAPI = {
 
   getAuspicious: (lat: number, lng: number, timezone?: string, date?: string) =>
     api.get('/api/v1/hindu/panchang/auspicious', { params: { lat, lng, timezone, date } }),
+
+  listFestivals: () =>
+    api.get('/api/v1/hindu/panchang/festivals'),
+
+  upcomingFestivals: (lat: number, lng: number, days = 90, timezone?: string) =>
+    api.get('/api/v1/hindu/panchang/festivals/upcoming', { params: { lat, lng, days, timezone } }),
+
+  getFestival: (slug: string) =>
+    api.get(`/api/v1/hindu/panchang/festivals/${slug}`),
 };
 
 export const calendarAPI = {

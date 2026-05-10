@@ -59,6 +59,12 @@ interface Festival {
   slug: string;
   nameEnglish: string;
   nameSanskrit?: string;
+  deityKey?: string;
+}
+
+interface UpcomingFestival {
+  festival: Festival;
+  date: string;
 }
 
 interface PanchangData {
@@ -147,6 +153,7 @@ export function meta() {
 
 export default function HinduPanchang() {
   const [data, setData] = useState<PanchangData | null>(null);
+  const [upcoming, setUpcoming] = useState<UpcomingFestival[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [locationLabel, setLocationLabel] = useState<string>(DEFAULT_LOCATION.label);
@@ -165,6 +172,14 @@ export default function HinduPanchang() {
       } finally {
         setLoading(false);
       }
+      // Best-effort upcoming festivals; never blocks the main panchang render.
+      hinduPanchangAPI
+        .upcomingFestivals(lat, lng, 90, tz)
+        .then((res) => {
+          const payload = res.data?.data ?? res.data;
+          setUpcoming((payload?.occurrences ?? []) as UpcomingFestival[]);
+        })
+        .catch(() => {});
     };
 
     if (typeof window !== "undefined" && navigator.geolocation) {
@@ -281,6 +296,19 @@ export default function HinduPanchang() {
                   title="Festivals Today"
                 />
                 <FestivalsStrip festivals={data.festivals} />
+              </section>
+            )}
+
+            {/* Upcoming festivals — best-effort, hidden when empty */}
+            {upcoming.length > 0 && (
+              <section aria-labelledby="upcoming-heading">
+                <SectionTitle
+                  id="upcoming-heading"
+                  eyebrow="Aagami Utsava"
+                  title="Upcoming Festivals"
+                  subtitle="Major festivals occurring in the next 90 days"
+                />
+                <UpcomingFestivalsList items={upcoming} />
               </section>
             )}
           </div>
@@ -705,6 +733,50 @@ function FestivalsStrip({ festivals }: { festivals: Festival[] }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+// ---------- Upcoming festivals list ----------
+
+function UpcomingFestivalsList({ items }: { items: UpcomingFestival[] }) {
+  return (
+    <ul className="space-y-3">
+      {items.slice(0, 8).map((o) => (
+        <li
+          key={`${o.festival.slug}-${o.date}`}
+          className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6 rounded-2xl bg-white border border-[#E8DCC4] shadow-[0_1px_2px_rgba(74,17,25,0.04),0_8px_24px_-12px_rgba(74,17,25,0.12)]"
+        >
+          <div className="flex items-center gap-4 min-w-0">
+            <span
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#FAF1D9] text-[#9A7B3A] shrink-0"
+              aria-hidden
+            >
+              <Sparkles size={16} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#3A0F18] leading-tight truncate">
+                {o.festival.nameEnglish}
+              </p>
+              {o.festival.nameSanskrit && (
+                <p
+                  className="text-xs text-[#6B5642] leading-tight mt-0.5 truncate"
+                  style={{ fontFamily: "var(--font-devanagari)" }}
+                  lang="sa"
+                >
+                  {o.festival.nameSanskrit}
+                </p>
+              )}
+            </div>
+          </div>
+          <time
+            className="text-sm sm:text-base font-semibold text-[#3A0F18] tabular-nums whitespace-nowrap shrink-0"
+            dateTime={o.date}
+          >
+            {formatGregorianDate(o.date)}
+          </time>
+        </li>
+      ))}
+    </ul>
   );
 }
 
