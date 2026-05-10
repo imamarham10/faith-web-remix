@@ -186,6 +186,27 @@ export const hinduPanchangAPI = {
     api.get(`/api/v1/hindu/panchang/festivals/${slug}`),
 };
 
+export const hinduPujaTimesAPI = {
+  getToday: (lat: number, lng: number, timezone?: string) =>
+    api.get('/api/v1/hindu/puja-times/today', { params: { lat, lng, timezone } }),
+
+  getByDate: (date: string, lat: number, lng: number, timezone?: string) =>
+    api.get(`/api/v1/hindu/puja-times/date/${date}`, { params: { lat, lng, timezone } }),
+
+  logSandhya: (
+    sandhya: 'pratah' | 'madhyahna' | 'sayam',
+    date: string,
+    status: 'on_time' | 'late' | 'missed',
+  ) => api.post('/api/v1/hindu/puja-times/log', { sandhya, date, status }),
+
+  getLogs: (fromDate?: string, toDate?: string) =>
+    api.get('/api/v1/hindu/puja-times/logs', { params: { fromDate, toDate } }),
+
+  getStats: () => api.get('/api/v1/hindu/puja-times/stats'),
+
+  deleteLog: (id: string) => api.delete(`/api/v1/hindu/puja-times/log/${id}`),
+};
+
 export const calendarAPI = {
   getToday: (timezone?: string, calendarAdjust: number = 0) =>
     api.get('/api/v1/islam/calendar/today', { params: { timezone, calendarAdjust } }),
