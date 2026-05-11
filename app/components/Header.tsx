@@ -85,40 +85,46 @@ export default function Header() {
         <div className="container-faith">
           <div className="flex items-center justify-between h-16 md:h-[4.5rem]">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group">
+            <Link to="/" className="flex items-center gap-2.5 group shrink-0">
               <img
                 src="/logo.png"
                 alt="Siraat"
                 width={36}
                 height={36}
-                className="w-9 h-9 rounded-xl shadow-sm"
+                className="w-9 h-9 rounded-xl shadow-sm shrink-0"
               />
-              <div>
+              <div className="whitespace-nowrap leading-none">
                 <span className="text-lg font-bold tracking-tight text-text">
                   Siraat
                 </span>
-                <span className="text-lg font-light tracking-tight text-[#9A7B3A] ml-0.5">
+                <span className="text-lg font-light tracking-tight text-[#9A7B3A] ml-0.5 hidden 2xl:inline">
                   - A Bridge
                 </span>
               </div>
             </Link>
 
             {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-0.5 min-w-0">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const active = isActive(link.to);
+                // Active-pill color forks 3-ways like chrome — burgundy on
+                // /hindu/*, green on /islam/* (and neutral defaults), midnight
+                // on the neutral landing where nav is hidden anyway.
+                const activeClass = onHinduPage
+                  ? "bg-[#6B1F2A]/10 text-[#6B1F2A]"
+                  : "bg-primary-50 text-primary";
                 return (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                       active
-                        ? "bg-primary-50 text-primary"
+                        ? activeClass
                         : "text-text-secondary hover:text-text hover:bg-black/[0.03]"
                     }`}
                   >
-                    <Icon size={16} strokeWidth={active ? 2.2 : 1.8} />
+                    <Icon size={15} strokeWidth={active ? 2.2 : 1.8} />
                     {link.label}
                   </Link>
                 );
@@ -126,7 +132,7 @@ export default function Header() {
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {user ? (
                 <div className="relative">
                   <button
@@ -200,10 +206,10 @@ export default function Header() {
                   to="/auth/login"
                   className={
                     isNeutralLanding
-                      ? "hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-xl bg-[#1A1238] text-white hover:bg-[#2D1B5E] transition-colors"
+                      ? "hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-[#1A1238] text-white hover:bg-[#2D1B5E] transition-colors whitespace-nowrap"
                       : onHinduPage
-                        ? "hidden sm:inline-flex btn-hindu-primary text-sm px-5 py-2"
-                        : "hidden sm:inline-flex btn-primary text-sm px-5 py-2"
+                        ? "hidden sm:inline-flex btn-hindu-primary text-sm px-4 py-2 whitespace-nowrap"
+                        : "hidden sm:inline-flex btn-primary text-sm px-4 py-2 whitespace-nowrap"
                   }
                 >
                   Sign In
