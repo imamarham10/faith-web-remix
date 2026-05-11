@@ -338,7 +338,7 @@ function AuthedJapa({ initialMantras }: { initialMantras: Mantra[] }) {
             <SummaryStat
               icon={<Flame size={17} />}
               label="Current Streak"
-              value={`${stats?.currentStreak ?? 0} days`}
+              value={`${stats?.currentStreak ?? 0} ${(stats?.currentStreak ?? 0) === 1 ? "day" : "days"}`}
               tone="ember"
             />
             <SummaryStat
@@ -803,8 +803,8 @@ function StatsTab({ stats }: { stats: Stats | null }) {
         <p className="text-xs text-[#7A6651] mt-1">Current Streak</p>
       </div>
       <div className="rounded-2xl bg-white border border-[#E5D9B7] p-5">
-        <div className="w-10 h-10 rounded-xl bg-[#3A6B4F]/12 flex items-center justify-center mb-3">
-          <TrendingUp size={18} className="text-[#3A6B4F]" />
+        <div className="w-10 h-10 rounded-xl bg-[#7A4A1F]/12 flex items-center justify-center mb-3">
+          <TrendingUp size={18} className="text-[#7A4A1F]" />
         </div>
         <p className="font-playfair text-2xl font-bold text-[#2A1410] tabular-nums">
           {stats.dailyAverage}
@@ -1266,7 +1266,9 @@ function SummaryStat({
   const tones: Record<string, string> = {
     burgundy: "text-[#7B2C2C] bg-[#7B2C2C]/8",
     ember: "text-[#A8581F] bg-[#E8B86E]/15",
-    leaf: "text-[#3A6B4F] bg-[#3A6B4F]/12",
+    // copper — warm earth tone that fits the Hindu burgundy/gold palette
+    // (the original "leaf" green broke the page-level visual coherence)
+    leaf: "text-[#7A4A1F] bg-[#7A4A1F]/12",
     gold: "text-[#C8902F] bg-[#C8902F]/15",
   };
   return (

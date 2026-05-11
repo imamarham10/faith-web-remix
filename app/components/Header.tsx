@@ -139,7 +139,13 @@ export default function Header() {
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-black/[0.03] transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-hero-gradient flex items-center justify-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        onHinduPage
+                          ? "bg-gradient-to-br from-[#6B1F2A] to-[#8B3344]"
+                          : "bg-hero-gradient"
+                      }`}
+                    >
                       <span className="text-white text-xs font-semibold">
                         {(user.name || user.email || "U")
                           .charAt(0)
