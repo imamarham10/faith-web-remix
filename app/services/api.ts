@@ -223,6 +223,112 @@ export const hinduJapaAPI = {
     api.get('/api/v1/hindu/japa/mantras', { params: { category, deity } }),
 };
 
+export const hinduScripturesAPI = {
+  getTexts: () =>
+    api.get('/api/v1/hindu/scriptures/texts'),
+
+  getText: (slug: string) =>
+    api.get(`/api/v1/hindu/scriptures/texts/${slug}`),
+
+  getChapter: (slug: string, chapterNumber: number | string, lang: string = 'en') =>
+    api.get(`/api/v1/hindu/scriptures/texts/${slug}/chapters/${chapterNumber}`, { params: { lang } }),
+
+  getVerse: (id: string, lang: string = 'en') =>
+    api.get(`/api/v1/hindu/scriptures/verses/${id}`, { params: { lang } }),
+
+  getFeatured: (lang: string = 'en', slug: string = 'bhagavad-gita') =>
+    api.get('/api/v1/hindu/scriptures/featured', { params: { lang, slug } }),
+
+  search: (q: string, lang: string = 'en') =>
+    api.get('/api/v1/hindu/scriptures/search', { params: { q, lang } }),
+
+  addBookmark: (verseId: string, note?: string) =>
+    api.post('/api/v1/hindu/scriptures/bookmarks', { verseId, ...(note ? { note } : {}) }),
+
+  getBookmarks: () =>
+    api.get('/api/v1/hindu/scriptures/bookmarks'),
+
+  deleteBookmark: (verseId: string) =>
+    api.delete(`/api/v1/hindu/scriptures/bookmarks/${verseId}`),
+};
+
+export const hinduStotrasAPI = {
+  getCategories: () =>
+    api.get('/api/v1/hindu/stotras/categories'),
+
+  getAll: (params?: { category?: string; deity?: string; type?: 'stotra' | 'aarti' | 'bhajan' }) =>
+    api.get('/api/v1/hindu/stotras', { params }),
+
+  search: (q: string) =>
+    api.get('/api/v1/hindu/stotras/search', { params: { q } }),
+
+  getBySlug: (slug: string, lang: string = 'en') =>
+    api.get(`/api/v1/hindu/stotras/${slug}`, { params: { lang } }),
+
+  addFavorite: (stotraId: string) =>
+    api.post('/api/v1/hindu/stotras/favorites', { stotraId }),
+
+  getFavorites: () =>
+    api.get('/api/v1/hindu/stotras/favorites'),
+
+  removeFavorite: (stotraId: string) =>
+    api.delete(`/api/v1/hindu/stotras/favorites/${stotraId}`),
+};
+
+export const hinduTemplesAPI = {
+  getAll: (params?: { deity?: string; state?: string; q?: string }) =>
+    api.get('/api/v1/hindu/temples', { params }),
+
+  getStates: () =>
+    api.get('/api/v1/hindu/temples/states'),
+
+  getNearby: (lat: number, lng: number, radiusKm: number = 100) =>
+    api.get('/api/v1/hindu/temples/nearby', { params: { lat, lng, radiusKm } }),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/hindu/temples/${id}`),
+
+  addFavorite: (templeId: string) =>
+    api.post('/api/v1/hindu/temples/favorites', { templeId }),
+
+  getFavorites: () =>
+    api.get('/api/v1/hindu/temples/favorites'),
+
+  removeFavorite: (templeId: string) =>
+    api.delete(`/api/v1/hindu/temples/favorites/${templeId}`),
+};
+
+export const hinduFeelingsAPI = {
+  getAllEmotions: () =>
+    api.get('/api/v1/hindu/feelings'),
+
+  getEmotionDetails: (slug: string, lang: string = 'en') =>
+    api.get(`/api/v1/hindu/feelings/${slug}`, { params: { lang } }),
+};
+
+export const hinduStoriesAPI = {
+  getCollections: () =>
+    api.get('/api/v1/hindu/stories/collections'),
+
+  getAll: (params?: { collection?: string; deity?: string }) =>
+    api.get('/api/v1/hindu/stories', { params }),
+
+  search: (q: string) =>
+    api.get('/api/v1/hindu/stories/search', { params: { q } }),
+
+  getById: (id: string) =>
+    api.get(`/api/v1/hindu/stories/${id}`),
+
+  addFavorite: (storyId: string) =>
+    api.post('/api/v1/hindu/stories/favorites', { storyId }),
+
+  getFavorites: () =>
+    api.get('/api/v1/hindu/stories/favorites'),
+
+  removeFavorite: (storyId: string) =>
+    api.delete(`/api/v1/hindu/stories/favorites/${storyId}`),
+};
+
 export const calendarAPI = {
   getToday: (timezone?: string, calendarAdjust: number = 0) =>
     api.get('/api/v1/islam/calendar/today', { params: { timezone, calendarAdjust } }),

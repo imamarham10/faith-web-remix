@@ -1108,8 +1108,8 @@ function GuestDhikr() {
 
   const handleTap = () => {
     if (isComplete) return;
-    setCount(c => c + 1);
-    setSessionTotal(s => s + 1);
+    setCount((c: number) => c + 1);
+    setSessionTotal((s: number) => s + 1);
     setPulse(true);
     setTimeout(() => setPulse(false), 200);
   };

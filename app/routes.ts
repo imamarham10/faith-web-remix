@@ -40,13 +40,19 @@ export default [
   // Faith: Hindu
   route("hindu", "routes/hindu.tsx"),
   route("hindu/puja-times", "routes/hindu.puja-times.tsx"),
-  route("hindu/scriptures", "routes/hindu.scriptures.tsx"),
   route("hindu/japa", "routes/hindu.japa.tsx"),
   route("hindu/panchang", "routes/hindu.panchang.tsx"),
+  route("hindu/scriptures", "routes/hindu.scriptures.tsx"),
+  route("hindu/scriptures/bookmarks", "routes/hindu.scriptures.bookmarks.tsx"),
+  route("hindu/scriptures/:slug/:chapterNumber", "routes/hindu.scriptures.$slug.$chapterNumber.tsx"),
   route("hindu/stotras", "routes/hindu.stotras.tsx"),
+  route("hindu/stotras/:slug", "routes/hindu.stotras.$slug.tsx"),
   route("hindu/temples", "routes/hindu.temples.tsx"),
+  route("hindu/temples/:id", "routes/hindu.temples.$id.tsx"),
   route("hindu/feelings", "routes/hindu.feelings.tsx"),
+  route("hindu/feelings/:slug", "routes/hindu.feelings.$slug.tsx"),
   route("hindu/stories", "routes/hindu.stories.tsx"),
+  route("hindu/stories/:id", "routes/hindu.stories.$id.tsx"),
 
   // 301 redirects from old top-level Islamic paths -> /islam/*
   route("calendar", REDIRECT, { id: "redir-calendar" }),
