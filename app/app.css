@@ -227,29 +227,34 @@ body {
 
 /* ============================================
    NEUTRAL THEME — Multi-faith landing.
-   Faith-agnostic twilight palette so no tradition's
-   visual language dominates the platform's front door.
+   "First light": warm espresso ink with a dawn-gold
+   glow rising from the horizon. Dawn is the shared
+   sacred hour of every tradition on the platform
+   (Fajr, Sandhya) — an umbrella idea, not a gradient
+   trend. No tradition's visual language dominates,
+   and no indigo/violet AI-landing cliché.
    ============================================ */
 
 .bg-hero-neutral {
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(224, 180, 112, 0.18), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(125, 90, 200, 0.25), transparent 70%),
-    linear-gradient(160deg, #0E1224 0%, #181845 35%, #2A1B5E 70%, #1A1238 100%);
+    radial-gradient(ellipse 95% 60% at 50% 110%, rgba(224, 180, 112, 0.30), rgba(178, 118, 58, 0.10) 45%, transparent 72%),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 0, 0, 0.25), transparent 65%),
+    linear-gradient(175deg, #16110C 0%, #211912 45%, #2C2013 78%, #3A2A15 100%);
 }
 
+/* Last stars fading into dawn — faint, warm-tinted, barely there. */
 .pattern-stars::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(circle at 12% 22%, rgba(255, 255, 255, 0.5) 0.6px, transparent 1.2px),
-    radial-gradient(circle at 38% 78%, rgba(255, 255, 255, 0.35) 0.4px, transparent 1px),
-    radial-gradient(circle at 72% 35%, rgba(255, 255, 255, 0.45) 0.5px, transparent 1px),
-    radial-gradient(circle at 86% 64%, rgba(255, 255, 255, 0.3) 0.4px, transparent 0.8px);
+    radial-gradient(circle at 12% 22%, rgba(245, 229, 194, 0.4) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 38% 78%, rgba(245, 229, 194, 0.22) 0.4px, transparent 1px),
+    radial-gradient(circle at 72% 35%, rgba(245, 229, 194, 0.32) 0.5px, transparent 1px),
+    radial-gradient(circle at 86% 64%, rgba(245, 229, 194, 0.2) 0.4px, transparent 0.8px);
   background-size: 280px 280px, 320px 320px, 240px 240px, 360px 360px;
-  opacity: 0.7;
+  opacity: 0.55;
 }
 
 .text-gradient-warm {
@@ -261,7 +266,7 @@ body {
 
 .btn-warm {
   background: linear-gradient(135deg, #E0B470 0%, #C8A55A 100%);
-  color: #1A1238;
+  color: #221A13;
   border: none;
   border-radius: 12px;
   padding: 12px 24px;

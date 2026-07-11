@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, ArrowRight, Mail, Lock, BookOpen, Moon, Compass } from "lucide-react";
+import { Loader2, ArrowRight, Mail, Lock } from "lucide-react";
 import { useAuth } from "~/contexts/AuthContext";
+import { AUTH_THEMES, resolveAuthFaith } from "~/utils/authTheme";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -17,6 +18,28 @@ export default function LoginPage() {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
+
+  // Faith-aware ambiance: neutral by default (main landing entry); themed
+  // when the visitor arrived from inside /islam or /hindu.
+  const authFaith = resolveAuthFaith(searchParams);
+  const theme = AUTH_THEMES[authFaith];
+  const faithSearch = authFaith === "neutral" ? "" : `?faith=${authFaith}`;
+
+  // Action color follows the ambiance: espresso ink on neutral, green on
+  // Islam, maroon on Hindu.
+  const submitClass =
+    authFaith === "hindu"
+      ? "btn-hindu-primary w-full py-3 disabled:opacity-50"
+      : authFaith === "islam"
+        ? "btn-primary w-full py-3 disabled:opacity-50"
+        : "w-full py-3 disabled:opacity-50 inline-flex items-center justify-center gap-2 rounded-xl bg-[#221A13] text-white text-sm font-semibold hover:bg-[#35281B] transition-colors";
+  const linkClass =
+    authFaith === "hindu"
+      ? "text-[#6B1F2A] font-semibold hover:underline"
+      : authFaith === "islam"
+        ? "text-primary font-semibold hover:underline"
+        : "text-[#221A13] font-semibold hover:underline";
 
   const {
     register,
@@ -55,10 +78,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Panel — Decorative */}
-      <div className="hidden lg:flex lg:w-[45%] bg-hero-gradient relative overflow-hidden">
-        {/* Geometric pattern overlay */}
-        <div className="absolute inset-0 pattern-islamic opacity-30" />
+      {/* Left Panel — Decorative, themed by entry faith */}
+      <div className={`hidden lg:flex lg:w-[45%] ${theme.panelBg} relative overflow-hidden`}>
+        <div className={`absolute inset-0 ${theme.pattern}`} />
         <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black/20" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
@@ -71,19 +93,15 @@ export default function LoginPage() {
           {/* Main Message */}
           <div className="max-w-sm">
             <h2 className="text-4xl font-bold font-playfair text-white mb-4 leading-tight">
-              Welcome back to your spiritual journey
+              {theme.loginHeading}
             </h2>
             <p className="text-white/60 text-base leading-relaxed mb-8">
-              Continue your path with prayer tracking, Quran reading, and dhikr — all in one place.
+              {theme.loginBody}
             </p>
 
             {/* Feature pills */}
             <div className="flex flex-wrap gap-2">
-              {[
-                { icon: BookOpen, label: "Quran Reader" },
-                { icon: Moon, label: "Dhikr Counter" },
-                { icon: Compass, label: "Qibla Finder" },
-              ].map(({ icon: Icon, label }) => (
+              {theme.loginPills.map(({ icon: Icon, label }) => (
                 <div
                   key={label}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/10 rounded-full px-3.5 py-2 text-white/70 text-xs"
@@ -97,14 +115,21 @@ export default function LoginPage() {
 
           {/* Bottom Quote */}
           <div className="border-t border-white/10 pt-6">
-            <p className="font-amiri text-white/40 text-base" dir="rtl">
-              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+            <p
+              className={theme.quote.className}
+              dir={theme.quote.dir}
+              style={authFaith === "hindu" ? { fontFamily: "var(--font-devanagari)" } : undefined}
+            >
+              {theme.quote.text}
             </p>
+            {theme.quote.caption && (
+              <p className="text-white/25 text-xs mt-1.5">{theme.quote.caption}</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Right Panel — Form */}
+      {/* Right Panel — Form (identical across faiths) */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-bg">
         <div className="w-full max-w-[420px] animate-fade-in-up">
           {/* Mobile Logo */}
@@ -170,7 +195,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || isLoading}
-                className="btn-primary w-full py-3 disabled:opacity-50"
+                className={submitClass}
               >
                 {isSubmitting || isLoading ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -185,7 +210,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-text-secondary mt-8">
             Don't have an account?{" "}
-            <Link to="/auth/register" className="text-primary font-semibold hover:underline">
+            <Link to={`/auth/register${faithSearch}`} className={linkClass}>
               Create Account
             </Link>
           </p>

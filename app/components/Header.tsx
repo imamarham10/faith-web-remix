@@ -37,6 +37,10 @@ export default function Header() {
   const isNeutralLanding = location.pathname === "/";
   const navLinks = isNeutralLanding ? [] : faithConfig.navLinks;
 
+  // Auth entry points carry the section's faith so the sign-in experience
+  // matches where the visitor came from — and stays neutral from the landing.
+  const authSearch = onIslamPage ? "?faith=islam" : onHinduPage ? "?faith=hindu" : "";
+
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -209,10 +213,10 @@ export default function Header() {
                 </div>
               ) : (
                 <Link
-                  to="/auth/login"
+                  to={`/auth/login${authSearch}`}
                   className={
                     isNeutralLanding
-                      ? "hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-[#1A1238] text-white hover:bg-[#2D1B5E] transition-colors whitespace-nowrap"
+                      ? "hidden sm:inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-[#221A13] text-white hover:bg-[#35281B] transition-colors whitespace-nowrap"
                       : onHinduPage
                         ? "hidden sm:inline-flex btn-hindu-primary text-sm px-4 py-2 whitespace-nowrap"
                         : "hidden sm:inline-flex btn-primary text-sm px-4 py-2 whitespace-nowrap"
@@ -321,13 +325,13 @@ export default function Header() {
             ) : (
               <div className="space-y-2 px-4">
                 <Link
-                  to="/auth/login"
+                  to={`/auth/login${authSearch}`}
                   className="btn-primary w-full text-center block"
                 >
                   Sign In
                 </Link>
                 <Link
-                  to="/auth/register"
+                  to={`/auth/register${authSearch}`}
                   className="btn-secondary w-full text-center block"
                 >
                   Create Account

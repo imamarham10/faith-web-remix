@@ -12,6 +12,8 @@ export default function Footer() {
   const onIslamPage = location.pathname.startsWith("/islam");
   const onHinduPage = location.pathname.startsWith("/hindu");
   const onFaithPage = onIslamPage || onHinduPage;
+  // Auth links carry the section's faith so the sign-in page matches it.
+  const authSearch = onIslamPage ? "?faith=islam" : onHinduPage ? "?faith=hindu" : "";
 
   // URL trumps the saved preference on faith-specific pages so the footer
   // matches the content the visitor is actually looking at.
@@ -76,14 +78,14 @@ export default function Footer() {
             </p>
             <div className="flex items-center justify-center gap-3">
               <Link
-                to="/auth/register"
+                to={`/auth/register${authSearch}`}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 text-white text-sm font-semibold hover:bg-white/15 transition-all duration-300"
               >
                 Get Started Free
                 <ArrowRight size={15} />
               </Link>
               <Link
-                to="/auth/login"
+                to={`/auth/login${authSearch}`}
                 className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border ${
                   onFaithPage
                     ? "border-gold/30 text-gold hover:bg-gold/10"
@@ -174,10 +176,10 @@ export default function Footer() {
                   <li>
                     <Link
                       to="/hindu"
-                      className="inline-flex items-center gap-2 text-[0.8125rem] text-white/65 hover:text-white/85 transition-colors duration-200"
+                      className="inline-flex items-center gap-2 text-[0.8125rem] text-white/80 hover:text-white transition-colors duration-200"
                     >
-                      <Sparkles size={11} className={accentClass} />
-                      Hinduism — coming soon
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Hinduism — live
                     </Link>
                   </li>
                   <li className="text-[0.75rem] text-white/40 pt-2">
@@ -206,7 +208,7 @@ export default function Footer() {
                 <>
                   <li>
                     <Link
-                      to="/auth/login"
+                      to={`/auth/login${authSearch}`}
                       className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
                     >
                       Sign In
@@ -214,7 +216,7 @@ export default function Footer() {
                   </li>
                   <li>
                     <Link
-                      to="/auth/register"
+                      to={`/auth/register${authSearch}`}
                       className="text-[0.8125rem] text-white/75 hover:text-white transition-colors duration-200"
                     >
                       Create Account
