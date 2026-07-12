@@ -18,6 +18,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { JsonLd } from "./components/JsonLd";
 import { Analytics } from "@vercel/analytics/react";
+import { GoogleAnalytics } from "./components/GoogleAnalytics";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/logo.png", type: "image/png" },
@@ -377,6 +378,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ScrollRestoration />
         <Scripts />
         <Analytics />
+        <GoogleAnalytics />
       </body>
     </html>
   );
