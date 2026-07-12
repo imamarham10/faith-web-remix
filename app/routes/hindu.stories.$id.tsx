@@ -14,6 +14,7 @@ import { hinduStoriesAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import { JsonLd } from "~/components/JsonLd";
 import { deityLabel, deityBadgeClass } from "~/lib/hinduDeities";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 const APP_URL = "https://www.siraat.website";
 
@@ -71,6 +72,7 @@ export function meta({
     { property: "og:description", content: description },
     { property: "og:type", content: "article" },
     { property: "og:url", content: url },
+    ...HINDU_OG_TAGS,
   ];
 }
 

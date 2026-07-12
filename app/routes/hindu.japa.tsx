@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { hinduJapaAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 export function meta() {
   return [
@@ -25,6 +26,7 @@ export function meta() {
       content:
         "Track your daily mantra recitations with mala-style counters and goals.",
     },
+    ...HINDU_OG_TAGS,
   ];
 }
 

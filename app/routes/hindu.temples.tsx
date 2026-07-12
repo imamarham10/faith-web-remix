@@ -13,6 +13,7 @@ import {
 import { hinduTemplesAPI } from "~/services/api";
 import { JsonLd } from "~/components/JsonLd";
 import { DEITY_KEYS, deityLabel, deityBadgeClass } from "~/lib/hinduDeities";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 const APP_URL = "https://www.siraat.website";
 const NEARBY_RADIUS_KM = 300;
@@ -78,6 +79,7 @@ export function meta() {
         "Kashi Vishwanath, Tirumala, Kedarnath and more — explore India's most sacred temples with directions and significance.",
     },
     { property: "og:url", content: `${APP_URL}/hindu/temples` },
+    ...HINDU_OG_TAGS,
   ];
 }
 

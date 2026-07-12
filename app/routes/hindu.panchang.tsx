@@ -12,6 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import { hinduPanchangAPI } from "~/services/api";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 // ---------- Types ----------
 
@@ -146,6 +147,7 @@ export function meta() {
       content:
         "Today's Tithi, Nakshatra, Yoga, Karana and auspicious times — Hindu Panchang based on your location.",
     },
+    ...HINDU_OG_TAGS,
   ];
 }
 

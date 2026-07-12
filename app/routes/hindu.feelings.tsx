@@ -3,6 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import { ArrowLeft, AlertTriangle, HeartHandshake, Loader2 } from "lucide-react";
 import { hinduFeelingsAPI } from "~/services/api";
 import { JsonLd } from "~/components/JsonLd";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 // ---------- Types ----------
 
@@ -45,6 +46,7 @@ export function meta() {
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:url", content: `${APP_URL}/hindu/feelings` },
+    ...HINDU_OG_TAGS,
   ];
 }
 

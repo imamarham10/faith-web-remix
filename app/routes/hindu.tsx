@@ -25,6 +25,7 @@ import {
 } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import { JsonLd } from "~/components/JsonLd";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 const APP_URL = "https://www.siraat.website";
 const DEFAULT_LOCATION = { lat: 28.6139, lng: 77.209, label: "New Delhi" };
@@ -163,6 +164,7 @@ export function meta() {
         "Daily Panchang, the Bhagavad Gita, japa, stotras, temples and festivals — everything for daily practice.",
     },
     { property: "og:url", content: `${APP_URL}/hindu` },
+    ...HINDU_OG_TAGS,
   ];
 }
 

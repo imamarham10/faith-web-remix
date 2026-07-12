@@ -13,6 +13,7 @@ import { hinduStotrasAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import { JsonLd } from "~/components/JsonLd";
 import { deityLabel, deityBadgeClass } from "~/lib/hinduDeities";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 const APP_URL = "https://www.siraat.website";
 
@@ -86,6 +87,7 @@ export function meta() {
         "Hanuman Chalisa, Shiva Tandava Stotram, Bhaja Govindam and more — Sanskrit hymns with transliteration and meaning.",
     },
     { property: "og:url", content: `${APP_URL}/hindu/stotras` },
+    ...HINDU_OG_TAGS,
   ];
 }
 

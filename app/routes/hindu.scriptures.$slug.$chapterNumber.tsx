@@ -19,6 +19,7 @@ import {
 import { hinduScripturesAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import { JsonLd } from "~/components/JsonLd";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 // ---------- Types ----------
 
@@ -125,6 +126,7 @@ export function meta({
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:url", content: url },
+    ...HINDU_OG_TAGS,
   ];
 }
 

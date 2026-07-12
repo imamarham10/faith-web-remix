@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { hinduPujaTimesAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 // ---------- Types ----------
 
@@ -119,6 +120,7 @@ export function meta() {
       content:
         "Three daily Sandhya windows based on your location — Pratah, Madhyahna, and Sayam.",
     },
+    ...HINDU_OG_TAGS,
   ];
 }
 

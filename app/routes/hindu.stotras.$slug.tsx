@@ -12,6 +12,7 @@ import { hinduStotrasAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
 import { JsonLd } from "~/components/JsonLd";
 import { deityLabel, deityBadgeClass } from "~/lib/hinduDeities";
+import { HINDU_OG_TAGS } from "~/utils/hinduSeo";
 
 const APP_URL = "https://www.siraat.website";
 
@@ -76,6 +77,7 @@ export function meta({ data, params }: { data?: { stotra: StotraDetail | null };
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:url", content: url },
+    ...HINDU_OG_TAGS,
   ];
 }
 
