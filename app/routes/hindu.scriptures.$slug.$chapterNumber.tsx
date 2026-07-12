@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLoaderData, useNavigate, useParams, useSearchParams } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -9,8 +9,12 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Headphones,
   Info,
   Loader2,
+  Pause,
+  Play,
+  X,
 } from "lucide-react";
 import { hinduScripturesAPI } from "~/services/api";
 import { useAuth } from "~/contexts/AuthContext";
@@ -124,6 +128,16 @@ export function meta({
   ];
 }
 
+// ---------- Chapter narration ----------
+
+interface ChapterAudio {
+  reciterSlug: string;
+  name: string;
+  language: string;
+  credit: string | null;
+  url: string;
+}
+
 // ---------- Page ----------
 
 export default function ScriptureChapterPage() {
@@ -142,6 +156,24 @@ export default function ScriptureChapterPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [highlightedVerse, setHighlightedVerse] = useState<number | null>(null);
+
+  // Chapter narration (audio)
+  const [audioTracks, setAudioTracks] = useState<ChapterAudio[]>([]);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [trackIndex, setTrackIndex] = useState(0);
+
+  useEffect(() => {
+    if (!slug || !chapterNumber) return;
+    setPlayerOpen(false);
+    setTrackIndex(0);
+    hinduScripturesAPI
+      .getChapterAudio(slug, chapterNumber)
+      .then((res) => {
+        const data = res.data?.data || res.data;
+        setAudioTracks(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setAudioTracks([]));
+  }, [slug, chapterNumber]);
 
   // Client fetch when SSR loader failed or params change client-side
   useEffect(() => {
@@ -341,6 +373,15 @@ export default function ScriptureChapterPage() {
               <p className="text-white/80 text-sm">
                 {chapter.verses.length} verse{chapter.verses.length !== 1 ? "s" : ""}
               </p>
+              {audioTracks.length > 0 && !playerOpen && (
+                <button
+                  onClick={() => setPlayerOpen(true)}
+                  className="mt-5 inline-flex items-center gap-2 bg-white/12 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors"
+                >
+                  <Headphones size={15} className="text-[#E8D5A0]" />
+                  Listen to this chapter
+                </button>
+              )}
             </div>
           ) : null}
         </div>
@@ -505,6 +546,174 @@ export default function ScriptureChapterPage() {
             </nav>
           </>
         )}
+      </div>
+
+      {playerOpen && audioTracks[trackIndex] && (
+        <ChapterAudioBar
+          tracks={audioTracks}
+          trackIndex={trackIndex}
+          onTrackChange={setTrackIndex}
+          chapterLabel={`Chapter ${chapter?.chapterNumber ?? ""} · ${chapter?.nameEnglish ?? ""}`}
+          onClose={() => setPlayerOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------- Chapter narration player ----------
+
+function formatClock(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+const TRACK_LABELS: Record<string, string> = {
+  en: "English",
+  hi: "हिन्दी",
+  sa: "संस्कृत",
+};
+
+function ChapterAudioBar({
+  tracks,
+  trackIndex,
+  onTrackChange,
+  chapterLabel,
+  onClose,
+}: {
+  tracks: ChapterAudio[];
+  trackIndex: number;
+  onTrackChange: (i: number) => void;
+  chapterLabel: string;
+  onClose: () => void;
+}) {
+  const track = tracks[trackIndex];
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [buffering, setBuffering] = useState(true);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    setFailed(false);
+    setCurrent(0);
+    el.play().catch(() => setPlaying(false));
+    return () => {
+      el.pause();
+    };
+  }, [track.url]);
+
+  const toggle = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
+  };
+
+  return (
+    <div className="fixed bottom-0 inset-x-0 z-40 bg-[#3A0F18]/97 backdrop-blur-xl border-t border-[#8B3344]/40 text-white shadow-[0_-8px_30px_rgba(58,15,24,0.35)]">
+      <audio
+        ref={audioRef}
+        src={track.url}
+        preload="metadata"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onWaiting={() => setBuffering(true)}
+        onCanPlay={() => setBuffering(false)}
+        onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
+        onDurationChange={(e) => setDuration(e.currentTarget.duration)}
+        onEnded={() => setPlaying(false)}
+        onError={() => {
+          setFailed(true);
+          setBuffering(false);
+        }}
+      />
+      <div className="container-faith py-3">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <button
+            onClick={toggle}
+            disabled={failed}
+            aria-label={playing ? "Pause" : "Play"}
+            className="w-11 h-11 rounded-full bg-white text-[#6B1F2A] flex items-center justify-center shrink-0 hover:bg-[#FAF1D9] transition-colors disabled:opacity-40"
+          >
+            {buffering && !failed ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : playing ? (
+              <Pause size={18} />
+            ) : (
+              <Play size={18} className="ml-0.5" />
+            )}
+          </button>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-3 mb-1">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  {failed ? "Audio unavailable — please try again later" : chapterLabel}
+                </p>
+                {tracks.length > 1 && (
+                  <span className="flex items-center gap-1 shrink-0">
+                    {tracks.map((t, i) => (
+                      <button
+                        key={t.reciterSlug}
+                        onClick={() => onTrackChange(i)}
+                        aria-pressed={i === trackIndex}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-colors ${
+                          i === trackIndex
+                            ? "bg-[#E8D5A0] text-[#3A0F18] border-[#E8D5A0]"
+                            : "text-white/70 border-white/25 hover:border-white/50"
+                        }`}
+                        style={
+                          t.language !== "en"
+                            ? { fontFamily: "var(--font-devanagari)", textTransform: "none" }
+                            : undefined
+                        }
+                      >
+                        {TRACK_LABELS[t.language] ?? t.language}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-white/60 tabular-nums shrink-0">
+                {formatClock(current)} / {formatClock(duration)}
+              </p>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={1}
+              value={Math.min(current, duration || 0)}
+              onChange={(e) => {
+                const el = audioRef.current;
+                if (el) el.currentTime = Number(e.target.value);
+              }}
+              aria-label="Seek"
+              className="w-full h-1 accent-[#E8D5A0] cursor-pointer"
+            />
+            <p className="text-[11px] text-white/55 truncate mt-0.5">
+              {track.name}
+              {track.credit ? ` · ${track.credit}` : ""}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            aria-label="Close player"
+            className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center shrink-0 transition-colors"
+          >
+            <X size={16} className="text-white/70" />
+          </button>
+        </div>
       </div>
     </div>
   );

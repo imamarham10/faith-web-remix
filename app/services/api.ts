@@ -233,6 +233,9 @@ export const hinduScripturesAPI = {
   getChapter: (slug: string, chapterNumber: number | string, lang: string = 'en') =>
     api.get(`/api/v1/hindu/scriptures/texts/${slug}/chapters/${chapterNumber}`, { params: { lang } }),
 
+  getChapterAudio: (slug: string, chapterNumber: number | string) =>
+    api.get(`/api/v1/hindu/scriptures/texts/${slug}/chapters/${chapterNumber}/audio`),
+
   getVerse: (id: string, lang: string = 'en') =>
     api.get(`/api/v1/hindu/scriptures/verses/${id}`, { params: { lang } }),
 
