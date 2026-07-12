@@ -174,7 +174,7 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     pageDescription = "Read this hadith with Arabic text and English translation from authenticated sources.";
     ogType = "article";
   } else if (pathname.startsWith("/islam/hadiths")) {
-    pageTitle = "Hadith Collections - 36,000+ Authentic Hadiths | Siraat";
+    pageTitle = "Hadith Collections — 7,600+ Authentic Hadiths | Siraat";
     pageDescription = "Explore authentic hadith collections including Sahih al-Bukhari, Sahih Muslim, and 8 more. Browse, search, and save prophetic traditions with Arabic text and translation.";
   } else if (pathname === "/subscribe") {
     pageTitle = "Siraat Premium - Unlock Advanced Quran Features | Siraat";

@@ -208,7 +208,7 @@ export default function HadithsPage() {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Hadith Collections",
-        "description": "Explore authentic sayings and traditions of Prophet Muhammad \uFDFA from 10 major collections with over 36,000 hadiths",
+        "description": "Explore authentic sayings and traditions of Prophet Muhammad \uFDFA from 10 major collections with 7,600+ hadiths",
         "url": "https://www.siraat.website/hadiths"
       }} />
 

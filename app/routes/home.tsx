@@ -213,7 +213,7 @@ export default function Landing() {
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[0.75rem] text-white/45 mb-6">
               <span>6,236 Quran verses</span>
               <span className="hidden sm:inline text-white/20">·</span>
-              <span>36,000+ hadiths</span>
+              <span>7,600+ hadiths</span>
               <span className="hidden sm:inline text-white/20">·</span>
               <span>The Bhagavad Gita, verse by verse</span>
               <span className="hidden sm:inline text-white/20">·</span>
@@ -280,7 +280,7 @@ export default function Landing() {
               </h2>
               <p className="text-text-secondary text-base md:text-lg leading-relaxed mt-5 max-w-xl">
                 The full Quran with Saheeh International translation. Ten
-                authentic hadith collections, 36,000+ hadiths. Prayer times
+                authentic hadith collections, 7,600+ hadiths. Prayer times
                 tuned to your coordinates. Dhikr counters, qibla, Hijri
                 calendar, the 99 Names — built end to end.
               </p>

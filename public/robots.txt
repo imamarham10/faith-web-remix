@@ -1,4 +1,4 @@
-# Siraat - Islamic Spiritual Companion
+# Siraat — A multi-faith spiritual companion
 # https://www.siraat.website
 
 User-agent: *
@@ -7,7 +7,8 @@ Allow: /
 # Auth and user-specific pages
 Disallow: /auth/
 Disallow: /settings
-Disallow: /quran/bookmarks
+Disallow: /islam/quran/bookmarks
+Disallow: /hindu/scriptures/bookmarks
 
 Sitemap: https://www.siraat.website/sitemap.xml
 
