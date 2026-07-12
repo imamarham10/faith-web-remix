@@ -83,14 +83,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // All dynamic inventories in parallel
-  const [duas, hadithIds, stotras, hinduFeelings, temples, stories] = await Promise.all([
+  const [duas, hadithIds, stotras, hinduFeelings, temples, stories, surahs] = await Promise.all([
     fetchJson(apiBase, "/api/v1/islam/duas"),
     fetchJson(apiBase, "/api/v1/islam/hadiths/sitemap-ids"),
     fetchJson(apiBase, "/api/v1/hindu/stotras"),
     fetchJson(apiBase, "/api/v1/hindu/feelings"),
     fetchJson(apiBase, "/api/v1/hindu/temples"),
     fetchJson(apiBase, "/api/v1/hindu/stories"),
+    fetchJson(apiBase, "/api/v1/islam/quran/surahs"),
   ]);
+
+  // Quran verse pages (6,236 — counts come from the DB so they always match
+  // what the verse routes can actually serve)
+  if (Array.isArray(surahs)) {
+    for (const s of surahs) {
+      const count = s?.verseCount || s?.versesCount || 0;
+      for (let v = 1; v <= count; v++) {
+        urls.push(urlEntry(`${PRODUCTION_URL}/islam/quran/${s.id}/${v}`, "2026-07-13", "0.65", "monthly"));
+      }
+    }
+  }
 
   // Dua detail pages (API returns a flat array of duas)
   if (Array.isArray(duas)) {

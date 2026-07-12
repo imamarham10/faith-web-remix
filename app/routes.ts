@@ -26,6 +26,7 @@ export default [
   route("islam/quran", "routes/quran.tsx"),
   route("islam/quran/bookmarks", "routes/quran.bookmarks.tsx"),
   route("islam/quran/:surahId", "routes/quran.$surahId.tsx"),
+  route("islam/quran/:surahId/:verseNumber", "routes/quran.$surahId.$verseNumber.tsx"),
   route("islam/qibla", "routes/qibla.tsx"),
   route("islam/dhikr", "routes/dhikr.tsx"),
   route("islam/names", "routes/names.tsx"),

@@ -608,11 +608,15 @@ export default function SurahDetailPage() {
                           : ''
                     }`}
                   >
-                    {/* Verse Number + Actions */}
+                    {/* Verse Number (permalink) + Actions */}
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center">
+                      <Link
+                        to={`/islam/quran/${surahId}/${verseNum}`}
+                        className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center hover:bg-primary/15 transition-colors"
+                        title={`Quran ${surahId}:${verseNum} — Arabic text and English translation`}
+                      >
                         <span className="text-xs font-bold text-primary">{verseNum}</span>
-                      </div>
+                      </Link>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleCopy(verse)}
