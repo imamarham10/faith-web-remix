@@ -17,7 +17,6 @@ import {
 import { useFaith } from "~/contexts/FaithContext";
 import { useAuth } from "~/contexts/AuthContext";
 import { FAITH_CONFIGS, type FaithKey } from "~/utils/faithConfig";
-import { JsonLd } from "~/components/JsonLd";
 
 /* ────────────── Faith portals — the hero's primary CTA ──────────────
    Two equal doors. Each carries its own accent so neither tradition reads
@@ -142,18 +141,6 @@ export default function Landing() {
 
   return (
     <>
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "Siraat",
-          alternateName: "Siraat — A Bridge",
-          url: "https://www.siraat.website",
-          description:
-            "Siraat is a multi-faith spiritual companion. Islam and Hinduism are live today — prayers and sandhya times, Quran and Bhagavad Gita, dhikr and japa, Hijri calendar and Panchang, built for daily practice.",
-        }}
-      />
-
       {/* ──────────────────────────  HERO  ────────────────────────── */}
       <section className="relative overflow-hidden bg-hero-neutral text-white pattern-stars">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />

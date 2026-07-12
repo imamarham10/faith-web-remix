@@ -66,7 +66,7 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
   }
 
   let pageTitle = "Siraat — A spiritual companion for every faith";
-  let pageDescription = "Siraat is a multi-faith spiritual companion. Pick your tradition and access prayers, scriptures, calendars and daily reminders.";
+  let pageDescription = "Siraat is a multi-faith spiritual companion. Islam and Hinduism are live today — prayer times, Quran, hadiths, Bhagavad Gita, Panchang, japa and festivals, built for daily practice.";
 
   // Dynamic routes are now under /islam/*. Check the dynamic forms first.
   const surahIdMatch = pathname.match(/^\/islam\/quran\/(\d+)$/);
@@ -159,13 +159,13 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     pageDescription = "Stories from the Puranas, Ramayana, and lives of saints — for daily reflection.";
   } else if (pathname === "/about") {
     pageTitle = "About Siraat | Siraat";
-    pageDescription = "Learn about Siraat, a free Islamic spiritual companion platform with prayer times, Quran, dhikr, and more.";
+    pageDescription = "Learn about Siraat, a free multi-faith spiritual companion — Islamic and Hindu features live today, with more traditions on the road.";
   } else if (pathname === "/privacy") {
     pageTitle = "Privacy Policy | Siraat";
     pageDescription = "How Siraat handles your data. We respect your privacy and never sell your information.";
   } else if (pathname === "/terms") {
     pageTitle = "Terms of Service | Siraat";
-    pageDescription = "Terms and conditions for using Siraat, the Islamic spiritual companion platform.";
+    pageDescription = "Terms and conditions for using Siraat, the multi-faith spiritual companion platform.";
   } else if (pathname === "/contact") {
     pageTitle = "Contact Us | Siraat";
     pageDescription = "Get in touch with the Siraat team. We welcome feedback, bug reports, and community contributions.";
@@ -189,11 +189,27 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     noIndex = true;
   }
 
+  // Section-aware share image + browser chrome color: green for Islam,
+  // maroon for Hindu, dawn-espresso for the neutral umbrella.
+  const onIslam = pathname.startsWith("/islam");
+  const onHindu = pathname.startsWith("/hindu");
+  const ogImage = onIslam
+    ? `${appUrl}/og/og-islam.png`
+    : onHindu
+      ? `${appUrl}/og/og-hindu.png`
+      : `${appUrl}/og/og-default.png`;
+  const ogImageAlt = onIslam
+    ? "Siraat for Muslims — prayer times, Quran, hadiths, dhikr and qibla"
+    : onHindu
+      ? "Siraat for Hindus — Panchang, Bhagavad Gita, japa, stotras and temples"
+      : "Siraat — a daily companion, built for every faith";
+  const themeColor = onIslam ? "#1B6B4E" : onHindu ? "#6B1F2A" : "#221A13";
+
   const metaTags: ReturnType<Route.MetaFunction> = [
     { title: pageTitle },
     { name: "description", content: pageDescription },
     { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-    { name: "theme-color", content: "#1B6B4E" },
+    { name: "theme-color", content: themeColor },
     { name: "application-name", content: "Siraat" },
     { name: "apple-mobile-web-app-capable", content: "yes" },
     { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
@@ -203,14 +219,14 @@ export const meta: Route.MetaFunction = ({ location, error }) => {
     { property: "og:title", content: pageTitle },
     { property: "og:description", content: pageDescription },
     { property: "og:url", content: pageUrl },
-    { property: "og:image", content: `${appUrl}/og-image.png` },
+    { property: "og:image", content: ogImage },
     { property: "og:image:width", content: "1200" },
     { property: "og:image:height", content: "630" },
-    { property: "og:image:alt", content: "Siraat App Preview" },
+    { property: "og:image:alt", content: ogImageAlt },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: pageTitle },
     { name: "twitter:description", content: pageDescription },
-    { name: "twitter:image", content: `${appUrl}/og-image.png` },
+    { name: "twitter:image", content: ogImage },
     { property: "og:locale", content: "en_US" },
     { property: "og:site_name", content: "Siraat" },
   ];
@@ -333,23 +349,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           "name": "Siraat",
           "alternateName": "Siraat - A Bridge",
           "url": "https://www.siraat.website",
-          "description": "Siraat is a multi-faith spiritual companion. Pick your tradition and access prayers, scriptures, calendars and daily reminders.",
-          "inLanguage": "en",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": "https://www.siraat.website/islam/quran?search={search_term_string}"
-            },
-            "query-input": "required name=search_term_string"
-          }
+          "description": "Siraat is a multi-faith spiritual companion. Islam and Hinduism are live today — prayer times, Quran, hadiths, Bhagavad Gita, Panchang, japa and festivals, built for daily practice.",
+          "inLanguage": "en"
         }} />
         <JsonLd data={{
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "Siraat",
           "url": "https://www.siraat.website",
-          "logo": { "@type": "ImageObject", "url": "https://www.siraat.website/og-image.png", "width": 1200, "height": 630 },
+          "logo": { "@type": "ImageObject", "url": "https://www.siraat.website/logo.png" },
           "description": "A multi-faith spiritual companion platform — bridging traditions for daily practice.",
           "foundingDate": "2026-01-01",
           "founder": { "@type": "Person", "name": "Imam Arham" }
