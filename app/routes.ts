@@ -45,6 +45,7 @@ export default [
   route("hindu/scriptures", "routes/hindu.scriptures.tsx"),
   route("hindu/scriptures/bookmarks", "routes/hindu.scriptures.bookmarks.tsx"),
   route("hindu/scriptures/:slug/:chapterNumber", "routes/hindu.scriptures.$slug.$chapterNumber.tsx"),
+  route("hindu/scriptures/:slug/:chapterNumber/:verseNumber", "routes/hindu.scriptures.$slug.$chapterNumber.$verseNumber.tsx"),
   route("hindu/stotras", "routes/hindu.stotras.tsx"),
   route("hindu/stotras/:slug", "routes/hindu.stotras.$slug.tsx"),
   route("hindu/temples", "routes/hindu.temples.tsx"),

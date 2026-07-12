@@ -449,13 +449,17 @@ export default function ScriptureChapterPage() {
                           : "border-[#E8DCC4]"
                       }`}
                     >
-                      {/* Verse number + bookmark */}
+                      {/* Verse number (permalink) + bookmark */}
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-9 h-9 rounded-lg bg-[#6B1F2A]/8 flex items-center justify-center">
+                        <Link
+                          to={`/hindu/scriptures/${slug}/${chapter.chapterNumber}/${verse.verseNumber}`}
+                          className="w-9 h-9 rounded-lg bg-[#6B1F2A]/8 flex items-center justify-center hover:bg-[#6B1F2A]/15 transition-colors"
+                          title={`Verse ${chapter.chapterNumber}.${verse.verseNumber} — Hindi & English meaning`}
+                        >
                           <span className="text-xs font-bold text-[#6B1F2A]">
                             {chapter.chapterNumber}.{verse.verseNumber}
                           </span>
-                        </div>
+                        </Link>
                         <button
                           onClick={() => toggleBookmark(verse)}
                           className="p-2 rounded-lg hover:bg-[#6B1F2A]/5 transition-colors"

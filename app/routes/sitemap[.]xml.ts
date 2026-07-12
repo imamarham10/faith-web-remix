@@ -117,6 +117,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     urls.push(urlEntry(`${PRODUCTION_URL}/hindu/scriptures/bhagavad-gita/${ch}`, "2026-07-12", "0.85", "monthly"));
   }
 
+  // Bhagavad Gita verse pages (701 — canonical recension counts; each has
+  // Sanskrit, transliteration, Siraat Hindi anuvad and English meaning)
+  const GITA_VERSE_COUNTS = [47, 72, 43, 42, 29, 47, 30, 28, 34, 42, 55, 20, 35, 27, 20, 24, 28, 78];
+  GITA_VERSE_COUNTS.forEach((count, i) => {
+    for (let v = 1; v <= count; v++) {
+      urls.push(urlEntry(`${PRODUCTION_URL}/hindu/scriptures/bhagavad-gita/${i + 1}/${v}`, "2026-07-12", "0.7", "monthly"));
+    }
+  });
+
   if (Array.isArray(stotras)) {
     for (const s of stotras) {
       if (s?.slug) {

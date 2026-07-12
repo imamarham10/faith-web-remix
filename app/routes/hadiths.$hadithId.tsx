@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useLoaderData } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {
   ArrowLeft,
+  ArrowRight,
   Loader2,
   Copy,
   Check,
@@ -16,6 +17,14 @@ import type { Hadith } from "~/types";
 import { JsonLd } from "~/components/JsonLd";
 import { PremiumBadge } from "~/components/PremiumGate";
 import { useAuth } from "~/contexts/AuthContext";
+import { ISLAM_OG_TAGS } from "~/utils/islamSeo";
+
+interface HadithNavItem {
+  id: string;
+  hadithNumber: number;
+  chapterTitle?: string | null;
+  textEnglish?: string | null;
+}
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const API_BASE =
@@ -32,6 +41,32 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return { hadith: null };
   }
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  const hadith = data?.hadith as (Hadith & { book?: { name?: string } }) | null;
+  if (!hadith?.id) {
+    return [{ title: "Hadith — Siraat" }, ...ISLAM_OG_TAGS];
+  }
+  const book = hadith.book?.name || "Prophetic Tradition";
+  const title = `Hadith ${hadith.hadithNumber} — ${book}${
+    hadith.chapterTitle ? `: ${hadith.chapterTitle}` : ""
+  } | Siraat`;
+  const description = (hadith.textEnglish || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 155);
+  const url = `https://www.siraat.website/islam/hadiths/${hadith.id}`;
+  return [
+    { title },
+    { name: "description", content: description },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:url", content: url },
+    { property: "og:type", content: "article" },
+    { tagName: "link", rel: "canonical", href: url },
+    ...ISLAM_OG_TAGS,
+  ];
+};
 
 export default function HadithDetailPage() {
   const { hadithId } = useParams();
@@ -142,8 +177,38 @@ export default function HadithDetailPage() {
     );
   }
 
+  const context = (hadith as any).context as
+    | { prev?: HadithNavItem | null; next?: HadithNavItem | null; related?: HadithNavItem[] }
+    | undefined;
+
   return (
     <div className="bg-gradient-surface min-h-screen pb-12">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Siraat",
+              item: "https://www.siraat.website/",
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Hadiths",
+              item: "https://www.siraat.website/islam/hadiths",
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: `${hadith.book?.name || "Hadith"} ${hadith.hadithNumber}`,
+              item: `https://www.siraat.website/islam/hadiths/${hadith.id}`,
+            },
+          ],
+        }}
+      />
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -315,6 +380,65 @@ export default function HadithDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Prev / Next navigation */}
+        {(context?.prev || context?.next) && (
+          <nav className="mt-6 grid grid-cols-2 gap-3" aria-label="Hadith navigation">
+            {context?.prev ? (
+              <Link
+                to={`/islam/hadiths/${context.prev.id}`}
+                className="card-elevated p-4 group hover:shadow-md transition-shadow"
+              >
+                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">
+                  <ArrowLeft size={12} /> Previous
+                </span>
+                <span className="text-sm font-medium text-text group-hover:text-primary transition-colors">
+                  Hadith {context.prev.hadithNumber}
+                </span>
+              </Link>
+            ) : (
+              <span />
+            )}
+            {context?.next && (
+              <Link
+                to={`/islam/hadiths/${context.next.id}`}
+                className="card-elevated p-4 group text-right hover:shadow-md transition-shadow"
+              >
+                <span className="flex items-center justify-end gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted mb-1">
+                  Next <ArrowRight size={12} />
+                </span>
+                <span className="text-sm font-medium text-text group-hover:text-primary transition-colors">
+                  Hadith {context.next.hadithNumber}
+                </span>
+              </Link>
+            )}
+          </nav>
+        )}
+
+        {/* Related hadiths (same chapter) */}
+        {context?.related && context.related.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-lg font-semibold text-text mb-4">
+              More from {hadith.chapterTitle || "this chapter"}
+            </h2>
+            <div className="space-y-3">
+              {context.related.map((r) => (
+                <Link
+                  key={r.id}
+                  to={`/islam/hadiths/${r.id}`}
+                  className="card-elevated p-4 block group hover:shadow-md transition-shadow"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                    Hadith {r.hadithNumber}
+                  </span>
+                  <p className="text-sm text-text-secondary mt-1 line-clamp-2 group-hover:text-text transition-colors">
+                    {r.textEnglish}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Back Link */}
         <div className="mt-6 text-center">
