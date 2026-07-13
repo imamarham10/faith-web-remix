@@ -90,9 +90,9 @@ export async function loader() {
 const APP_URL = "https://www.siraat.website";
 
 export function meta() {
-  const title = "Bhagavad Gita Online — Read All 18 Chapters | Siraat";
+  const title = "Hindu Scriptures Online — Bhagavad Gita & Valmiki Ramayana | Siraat";
   const description =
-    "Read the Bhagavad Gita verse by verse with Devanagari Sanskrit, IAST transliteration, and English translation. Browse all 18 chapters, search verses, and bookmark your favourites.";
+    "Read the Bhagavad Gita (18 chapters) and the complete Valmiki Ramayana (7 kandas, 19,371 shlokas) verse by verse — Devanagari Sanskrit, IAST transliteration, and English translation.";
   return [
     { title },
     { name: "description", content: description },
@@ -177,6 +177,20 @@ export default function HinduScriptures() {
 
   const isSearchActive = query.trim().length > 0;
 
+  // The API lists texts alphabetically; kandas must appear in epic order.
+  const RAMAYANA_ORDER = [
+    "ramayana-bala-kanda",
+    "ramayana-ayodhya-kanda",
+    "ramayana-aranya-kanda",
+    "ramayana-kishkindha-kanda",
+    "ramayana-sundara-kanda",
+    "ramayana-yuddha-kanda",
+    "ramayana-uttara-kanda",
+  ];
+  const kandas = RAMAYANA_ORDER.map((slug) =>
+    texts.find((t) => t.slug === slug),
+  ).filter((t): t is ScriptureText => Boolean(t));
+
   return (
     <div className="min-h-screen bg-[#FBF6EC]">
       <JsonLd
@@ -205,18 +219,19 @@ export default function HinduScriptures() {
               Scriptures
             </div>
             <h1 className="font-playfair text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight mb-3">
-              Bhagavad Gita
+              Sacred Texts
             </h1>
             <p
               className="text-[#E8D5A0] text-2xl mb-4"
               style={{ fontFamily: "var(--font-devanagari)" }}
               lang="sa"
             >
-              श्रीमद्भगवद्गीता
+              गीता · रामायणम्
             </p>
             <p className="text-white/80 text-base max-w-xl mx-auto mb-8">
-              Read verse by verse — Devanagari Sanskrit, transliteration, and
-              English translation across 18 chapters.
+              The Bhagavad Gita and the complete Valmiki Ramayana — read verse
+              by verse in Devanagari Sanskrit with transliteration and English
+              translation.
             </p>
 
             {/* Verse search */}
@@ -285,13 +300,13 @@ export default function HinduScriptures() {
           <ErrorCard message={error} />
         ) : (
           <div className="space-y-10 md:space-y-12">
-            {/* Texts */}
+            {/* Bhagavad Gita — flagship */}
             <section aria-labelledby="texts-heading">
               <div className="flex items-center justify-between mb-5">
                 <SectionTitle
                   id="texts-heading"
-                  eyebrow="Granthas"
-                  title="Sacred Texts"
+                  eyebrow="Smriti"
+                  title="Bhagavad Gita"
                 />
                 {isAuthenticated && (
                   <Link
@@ -303,40 +318,37 @@ export default function HinduScriptures() {
                   </Link>
                 )}
               </div>
-              {texts.length === 0 && !gita ? (
+              {!gita && texts.length === 0 ? (
                 <EmptyCard
                   title="No scriptures available yet"
                   subtitle="Sacred texts are being prepared. Please check back soon."
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                  {(texts.length > 0
-                    ? texts
-                    : gita
-                      ? [{ ...gita, chapterCount: gita.chapters?.length }]
-                      : []
-                  ).map((t) => (
-                    <Link
-                      key={t.slug}
-                      to={`/hindu/scriptures/${t.slug}`}
-                      className="group rounded-2xl bg-white border border-[#6B1F2A]/15 hover:border-[#6B1F2A]/40 p-6 md:p-7 shadow-[0_1px_2px_rgba(74,17,25,0.04),0_8px_24px_-12px_rgba(74,17,25,0.12)] transition-colors block"
+                <Link
+                  to="/hindu/scriptures/bhagavad-gita"
+                  className="group flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-2xl bg-white border border-[#6B1F2A]/15 hover:border-[#6B1F2A]/40 p-6 md:p-7 shadow-[0_1px_2px_rgba(74,17,25,0.04),0_8px_24px_-12px_rgba(74,17,25,0.12)] transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-2xl md:text-3xl text-[#3A0F18] font-semibold mb-1.5 leading-tight"
+                      style={{ fontFamily: "var(--font-devanagari)" }}
+                      lang="sa"
                     >
-                      <p
-                        className="text-2xl md:text-3xl text-[#3A0F18] font-semibold mb-1.5 leading-tight"
-                        style={{ fontFamily: "var(--font-devanagari)" }}
-                        lang="sa"
-                      >
-                        {t.nameSanskrit}
-                      </p>
-                      <h3 className="text-lg font-bold text-[#1A1D23] tracking-tight mb-2 group-hover:text-[#6B1F2A] transition-colors">
-                        {t.nameEnglish}
-                      </h3>
-                      <p className="text-sm text-[#6B5642]">
-                        {t.chapterCount ?? 18} chapters · {t.totalVerses} verses
-                      </p>
-                    </Link>
-                  ))}
-                </div>
+                      श्रीमद्भगवद्गीता
+                    </p>
+                    <h3 className="text-lg font-bold text-[#1A1D23] tracking-tight mb-2 group-hover:text-[#6B1F2A] transition-colors">
+                      Bhagavad Gita
+                    </h3>
+                    <p className="text-sm text-[#6B5642]">
+                      18 chapters · 701 verses · Hindi &amp; English narration ·
+                      सरल हिन्दी अनुवाद
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-2 self-start sm:self-center rounded-xl bg-[#6B1F2A] group-hover:bg-[#4A1119] text-white text-sm font-semibold px-5 py-2.5 transition-colors shrink-0">
+                    Start reading
+                    <ChevronRight size={15} />
+                  </span>
+                </Link>
               )}
             </section>
 
@@ -376,6 +388,53 @@ export default function HinduScriptures() {
                           <span className="text-[#C8A55A]">·</span>
                           <span className="text-xs text-[#6B5642] whitespace-nowrap">
                             {ch.verseCount} verses
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        size={16}
+                        className="text-[#9A7B3A] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Valmiki Ramayana — the seven kandas */}
+            {kandas.length > 0 && (
+              <section aria-labelledby="ramayana-heading">
+                <SectionTitle
+                  id="ramayana-heading"
+                  eyebrow="Itihasa"
+                  title="Valmiki Ramayana"
+                  subtitle="The complete epic — seven kandas, 642 sargas, 19,371 shlokas in Sanskrit and English"
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                  {kandas.map((k, i) => (
+                    <Link
+                      key={k.slug}
+                      to={`/hindu/scriptures/${k.slug}`}
+                      className="group flex items-center gap-4 rounded-2xl bg-white border border-[#E8DCC4] hover:border-[#6B1F2A]/30 p-4 sm:p-5 transition-colors shadow-[0_1px_2px_rgba(74,17,25,0.04)]"
+                    >
+                      <div className="w-11 h-11 rounded-xl bg-[#6B1F2A]/8 flex items-center justify-center shrink-0 group-hover:bg-[#6B1F2A]/15 transition-colors">
+                        <span className="text-sm font-bold text-[#6B1F2A]">{i + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-[0.9375rem] font-semibold text-[#3A0F18] group-hover:text-[#6B1F2A] transition-colors truncate">
+                          {k.nameEnglish.replace("Valmiki Ramayana — ", "")}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span
+                            className="text-xs text-[#6B5642] truncate"
+                            style={{ fontFamily: "var(--font-devanagari)" }}
+                            lang="sa"
+                          >
+                            {k.nameSanskrit}
+                          </span>
+                          <span className="text-[#C8A55A]">·</span>
+                          <span className="text-xs text-[#6B5642] whitespace-nowrap">
+                            {k.chapterCount} sargas
                           </span>
                         </div>
                       </div>
