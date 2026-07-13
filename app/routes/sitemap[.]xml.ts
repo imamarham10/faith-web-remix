@@ -138,6 +138,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   });
 
+  // Valmiki Ramayana: kanda landing pages, sarga pages, and shloka pages —
+  // driven by the API so the sitemap always matches what the routes serve.
+  const RAMAYANA_SLUGS = [
+    "ramayana-bala-kanda", "ramayana-ayodhya-kanda", "ramayana-aranya-kanda",
+    "ramayana-kishkindha-kanda", "ramayana-sundara-kanda", "ramayana-yuddha-kanda",
+    "ramayana-uttara-kanda",
+  ];
+  const kandas = await Promise.all(
+    RAMAYANA_SLUGS.map((slug) => fetchJson(apiBase, `/api/v1/hindu/scriptures/texts/${slug}`)),
+  );
+  for (const kanda of kandas) {
+    if (!kanda?.slug || !Array.isArray(kanda.chapters)) continue;
+    urls.push(urlEntry(`${PRODUCTION_URL}/hindu/scriptures/${kanda.slug}`, "2026-07-13", "0.8", "monthly"));
+    for (const ch of kanda.chapters) {
+      urls.push(urlEntry(`${PRODUCTION_URL}/hindu/scriptures/${kanda.slug}/${ch.chapterNumber}`, "2026-07-13", "0.7", "monthly"));
+      for (let v = 1; v <= (ch.verseCount || 0); v++) {
+        urls.push(urlEntry(`${PRODUCTION_URL}/hindu/scriptures/${kanda.slug}/${ch.chapterNumber}/${v}`, "2026-07-13", "0.6", "monthly"));
+      }
+    }
+  }
+
   if (Array.isArray(stotras)) {
     for (const s of stotras) {
       if (s?.slug) {

@@ -316,9 +316,10 @@ export default function HinduScriptures() {
                       ? [{ ...gita, chapterCount: gita.chapters?.length }]
                       : []
                   ).map((t) => (
-                    <article
+                    <Link
                       key={t.slug}
-                      className="rounded-2xl bg-white border border-[#6B1F2A]/15 p-6 md:p-7 shadow-[0_1px_2px_rgba(74,17,25,0.04),0_8px_24px_-12px_rgba(74,17,25,0.12)]"
+                      to={`/hindu/scriptures/${t.slug}`}
+                      className="group rounded-2xl bg-white border border-[#6B1F2A]/15 hover:border-[#6B1F2A]/40 p-6 md:p-7 shadow-[0_1px_2px_rgba(74,17,25,0.04),0_8px_24px_-12px_rgba(74,17,25,0.12)] transition-colors block"
                     >
                       <p
                         className="text-2xl md:text-3xl text-[#3A0F18] font-semibold mb-1.5 leading-tight"
@@ -327,13 +328,13 @@ export default function HinduScriptures() {
                       >
                         {t.nameSanskrit}
                       </p>
-                      <h3 className="text-lg font-bold text-[#1A1D23] tracking-tight mb-2">
+                      <h3 className="text-lg font-bold text-[#1A1D23] tracking-tight mb-2 group-hover:text-[#6B1F2A] transition-colors">
                         {t.nameEnglish}
                       </h3>
                       <p className="text-sm text-[#6B5642]">
                         {t.chapterCount ?? 18} chapters · {t.totalVerses} verses
                       </p>
-                    </article>
+                    </Link>
                   ))}
                 </div>
               )}

@@ -112,12 +112,19 @@ export function meta({
   const textName = data?.text?.nameEnglish || "Bhagavad Gita";
   const chapterNum = data?.chapter?.chapterNumber ?? params.chapterNumber;
   const chapterName = data?.chapter?.nameEnglish;
-  const title = chapterName
-    ? `${textName} Chapter ${chapterNum} — ${chapterName} | Siraat`
-    : `${textName} Chapter ${chapterNum} | Siraat`;
-  const description = chapterName
-    ? `Read ${textName} Chapter ${chapterNum} (${chapterName}) verse by verse with Devanagari Sanskrit, transliteration, and English translation.`
-    : `Read ${textName} Chapter ${chapterNum} with Sanskrit, transliteration, and English translation.`;
+  const isRamayana = (params.slug || "").startsWith("ramayana-");
+  // Ramayana chapter names already read "Sundara Kanda, Sarga N" — avoid
+  // "Chapter N — ..., Sarga N" duplication.
+  const title = isRamayana && chapterName
+    ? `${chapterName} — Valmiki Ramayana in Sanskrit & English | Siraat`
+    : chapterName
+      ? `${textName} Chapter ${chapterNum} — ${chapterName} | Siraat`
+      : `${textName} Chapter ${chapterNum} | Siraat`;
+  const description = isRamayana && chapterName
+    ? `Read ${chapterName} of the Valmiki Ramayana shloka by shloka with Devanagari Sanskrit, IAST transliteration, and M.N. Dutt's English translation.`
+    : chapterName
+      ? `Read ${textName} Chapter ${chapterNum} (${chapterName}) verse by verse with Devanagari Sanskrit, transliteration, and English translation.`
+      : `Read ${textName} Chapter ${chapterNum} with Sanskrit, transliteration, and English translation.`;
   const url = `${APP_URL}/hindu/scriptures/${params.slug}/${params.chapterNumber}`;
   return [
     { title },
@@ -344,7 +351,7 @@ export default function ScriptureChapterPage() {
       <section className="bg-hero-hindu pattern-kolam text-white">
         <div className="container-faith py-10 md:py-14">
           <Link
-            to="/hindu/scriptures"
+            to={slug === "bhagavad-gita" ? "/hindu/scriptures" : `/hindu/scriptures/${slug}`}
             className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm mb-6 transition-colors"
           >
             <ArrowLeft size={16} />

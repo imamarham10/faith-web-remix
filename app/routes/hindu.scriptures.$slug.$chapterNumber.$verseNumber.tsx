@@ -67,12 +67,24 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<LoaderData
   }
 
   try {
-    const res = await fetch(
-      `${API_BASE}/api/v1/hindu/scriptures/texts/${slug}/chapters/${chapterNum}?lang=en,hi`
-    );
+    const [res, textRes] = await Promise.all([
+      fetch(
+        `${API_BASE}/api/v1/hindu/scriptures/texts/${slug}/chapters/${chapterNum}?lang=en,hi`
+      ),
+      fetch(`${API_BASE}/api/v1/hindu/scriptures/texts/${slug}`),
+    ]);
     if (!res.ok) return empty;
     const json = await res.json();
     const chapter = json.data || json;
+    let textName = "Bhagavad Gita";
+    try {
+      if (textRes.ok) {
+        const textJson = await textRes.json();
+        textName = (textJson.data || textJson)?.nameEnglish || textName;
+      }
+    } catch {
+      /* keep default */
+    }
     const verses: ChapterVerse[] = chapter?.verses || [];
     const verse = verses.find((v) => v.verseNumber === verseNum) || null;
     if (!verse) return { ...empty, chapter };
@@ -102,7 +114,7 @@ export async function loader({ params }: LoaderFunctionArgs): Promise<LoaderData
         nameEnglish: chapter.nameEnglish,
         nameSanskrit: chapter.nameSanskrit,
       },
-      textName: "Bhagavad Gita",
+      textName,
       slug,
       prev,
       next,
@@ -126,11 +138,18 @@ export function meta({
   const c = data?.chapter?.chapterNumber ?? params.chapterNumber;
   const v = data?.verse?.verseNumber ?? params.verseNumber;
   const textName = data?.textName || "Bhagavad Gita";
-  const title = `${textName} ${c}.${v} — Hindi & English Meaning | Siraat`;
+  const hasHindi = Boolean(
+    data?.verse?.translations?.some((t) => t.languageCode === "hi"),
+  );
+  const langLabel = hasHindi ? "Hindi & English Meaning" : "Sanskrit & English Meaning";
+  const langList = hasHindi
+    ? "Sanskrit shloka, transliteration, Hindi anuvad and English meaning"
+    : "Sanskrit shloka, transliteration and English meaning";
+  const title = `${textName} ${c}.${v} — ${langLabel} | Siraat`;
   const english = data?.verse?.translations?.find((t) => t.languageCode === "en")?.text;
   const description = english
-    ? `${english.replace(/\s+/g, " ").trim().slice(0, 120)}… Read ${textName} chapter ${c} verse ${v} with Sanskrit shloka, transliteration, Hindi anuvad and English meaning.`
-    : `${textName} chapter ${c} verse ${v} with Sanskrit shloka, transliteration, Hindi anuvad and English meaning.`;
+    ? `${english.replace(/\s+/g, " ").trim().slice(0, 120)}… Read ${textName} chapter ${c} verse ${v} with ${langList}.`
+    : `${textName} chapter ${c} verse ${v} with ${langList}.`;
   const url = `${APP_URL}/hindu/scriptures/${params.slug}/${c}/${v}`;
   return [
     { title },
@@ -186,7 +205,7 @@ export default function GitaVersePage() {
               "@type": "ListItem",
               position: 2,
               name: textName,
-              item: `${APP_URL}/hindu/scriptures`,
+              item: `${APP_URL}/hindu/scriptures/${slug}`,
             },
             {
               "@type": "ListItem",
@@ -329,13 +348,15 @@ export default function GitaVersePage() {
             <BookOpen size={15} />
             Read full chapter {chapter.chapterNumber}
           </Link>
-          <Link
-            to={chapterHref}
-            className="inline-flex items-center gap-2 rounded-xl bg-white border border-[#E8DCC4] text-[#3A0F18] text-sm font-semibold px-5 py-2.5 hover:border-[#6B1F2A]/40 transition-colors"
-          >
-            <Headphones size={15} className="text-[#9A7B3A]" />
-            Listen in Hindi &amp; English
-          </Link>
+          {slug === "bhagavad-gita" && (
+            <Link
+              to={chapterHref}
+              className="inline-flex items-center gap-2 rounded-xl bg-white border border-[#E8DCC4] text-[#3A0F18] text-sm font-semibold px-5 py-2.5 hover:border-[#6B1F2A]/40 transition-colors"
+            >
+              <Headphones size={15} className="text-[#9A7B3A]" />
+              Listen in Hindi &amp; English
+            </Link>
+          )}
         </div>
       </div>
     </div>
