@@ -16,6 +16,7 @@ import {
   ScrollText,
   Sunrise,
   Heart,
+  Library,
 } from "lucide-react";
 import {
   hinduPanchangAPI,
@@ -941,7 +942,8 @@ export default function HinduHome() {
           {[
             { icon: Calendar, title: "Panchang", link: "/hindu/panchang", desc: "Tithi, nakshatra, yoga, karana and auspicious times for your location.", badge: "Essential" },
             { icon: Clock, title: "Sandhya Times", link: "/hindu/puja-times", desc: "Dawn, midday and dusk worship windows, with a log to keep your practice steady.", badge: "Essential" },
-            { icon: BookOpen, title: "Bhagavad Gita", link: "/hindu/scriptures", desc: "All 18 chapters — Sanskrit, transliteration and translation, with bookmarks.", badge: "Essential" },
+            { icon: BookOpen, title: "Bhagavad Gita", link: "/hindu/scriptures/bhagavad-gita", desc: "All 18 chapters — Sanskrit, Hindi and English, with narration and bookmarks.", badge: "Essential" },
+            { icon: Library, title: "Valmiki Ramayana", link: "/hindu/scriptures", desc: "The complete epic — seven kandas, 19,371 shlokas in Sanskrit and English.", badge: "New" },
             { icon: Flower2, title: "Japa Mala", link: "/hindu/japa", desc: "Count mantra repetitions with goals, streaks and a mantra library.", badge: "Popular" },
             { icon: ScrollText, title: "Stotras & Aartis", link: "/hindu/stotras", desc: "The Hanuman Chalisa and more — full Sanskrit with meaning, by deity." },
             { icon: Landmark, title: "Sacred Temples", link: "/hindu/temples", desc: "Jyotirlingas, Char Dham and Shakti Pithas — with directions for your yatra." },
