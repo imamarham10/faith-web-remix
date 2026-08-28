@@ -173,7 +173,7 @@ export default function Landing() {
                   key={p.key}
                   onClick={() => handlePick(p.key)}
                   aria-label={`Begin with ${p.name}`}
-                  className={`group relative text-left p-6 rounded-2xl border bg-white/[0.07] border-white/15 backdrop-blur-md transition-all duration-300 hover:bg-white/[0.12] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B470]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#191410] ${p.ring}`}
+                  className={`group relative text-left p-6 rounded-2xl border bg-white/[0.07] border-white/15 backdrop-blur-md transition-all duration-300 cursor-pointer hover:bg-white/[0.12] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B470]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#191410] ${p.ring}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300/90">
