@@ -5,6 +5,13 @@ const REDIRECT = "routes/redirect-to-islam.tsx";
 export default [
   // Static / faith-neutral
   route("sitemap.xml", "routes/sitemap[.]xml.ts"),
+  route("sitemap-static.xml", "routes/sitemap-static[.]xml.ts"),
+  route("sitemap-quran.xml", "routes/sitemap-quran[.]xml.ts"),
+  route("sitemap-hadiths.xml", "routes/sitemap-hadiths[.]xml.ts"),
+  route("sitemap-islam-misc.xml", "routes/sitemap-islam-misc[.]xml.ts"),
+  route("sitemap-gita.xml", "routes/sitemap-gita[.]xml.ts"),
+  route("sitemap-ramayana.xml", "routes/sitemap-ramayana[.]xml.ts"),
+  route("sitemap-hindu-misc.xml", "routes/sitemap-hindu-misc[.]xml.ts"),
   route("about", "routes/about.tsx"),
   route("privacy", "routes/privacy.tsx"),
   route("terms", "routes/terms.tsx"),
