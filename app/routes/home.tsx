@@ -134,9 +134,13 @@ export default function Landing() {
     }
   }, [isAuthenticated, isLoading, config, navigate]);
 
-  const handlePick = async (key: FaithKey) => {
-    await setFaith(key);
-    navigate(FAITH_CONFIGS[key].pathPrefix);
+  // Fire-and-forget: saving the faith preference has never needed to block
+  // the navigation, and awaiting it before navigate() defeated <Link
+  // prefetch="intent"> below (a manual prefetch-on-hover doesn't dedupe with
+  // a later navigate() the way Link's built-in prefetch cache does — the
+  // click must go through an actual <Link> to reuse the prefetched data).
+  const handlePick = (key: FaithKey) => {
+    void setFaith(key);
   };
 
   return (
@@ -169,11 +173,13 @@ export default function Landing() {
             {/* Faith portals — two equal doors */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
               {PORTALS.map((p) => (
-                <button
+                <Link
                   key={p.key}
+                  to={FAITH_CONFIGS[p.key].pathPrefix}
+                  prefetch="intent"
                   onClick={() => handlePick(p.key)}
                   aria-label={`Begin with ${p.name}`}
-                  className={`group relative text-left p-6 rounded-2xl border bg-white/[0.07] border-white/15 backdrop-blur-md transition-all duration-300 cursor-pointer hover:bg-white/[0.12] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B470]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#191410] ${p.ring}`}
+                  className={`group relative block text-left p-6 rounded-2xl border bg-white/[0.07] border-white/15 backdrop-blur-md transition-all duration-300 cursor-pointer hover:bg-white/[0.12] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E0B470]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#191410] ${p.ring}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300/90">
@@ -205,7 +211,7 @@ export default function Landing() {
                       </span>
                     ))}
                   </div>
-                </button>
+                </Link>
               ))}
             </div>
 
@@ -288,6 +294,7 @@ export default function Landing() {
 
             <Link
               to="/islam"
+              prefetch="intent"
               className="group inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#1B6B4E] text-white text-sm font-semibold hover:bg-[#134D38] transition-colors shrink-0 self-start md:self-auto"
             >
               Explore Siraat for Muslims
@@ -436,6 +443,7 @@ export default function Landing() {
 
             <Link
               to="/hindu"
+              prefetch="intent"
               className="group inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#6B1F2A] text-white text-sm font-semibold hover:bg-[#4A1119] transition-colors shrink-0 self-start md:self-auto"
             >
               Explore Siraat for Hindus

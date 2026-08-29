@@ -552,6 +552,18 @@ export const userPreferencesAPI = {
     api.put('/users/preferences', data),
 };
 
+export const feedbackAPI = {
+  submit: (data: {
+    type: 'feedback' | 'bug' | 'feature_request' | 'query';
+    message: string;
+    email?: string;
+    pageUrl: string;
+    faithContext?: string;
+    userAgent?: string;
+    website?: string; // honeypot — always sent empty by real users
+  }) => api.post('/api/v1/feedback', data),
+};
+
 export const subscriptionAPI = {
   create: (plan: 'monthly' | 'yearly') =>
     api.post('/api/v1/subscriptions/create', { plan }),

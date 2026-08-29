@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useLocation,
+  useNavigation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -16,6 +17,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import FeedbackWidget from "./components/FeedbackWidget";
 import { JsonLd } from "./components/JsonLd";
 import { Analytics } from "@vercel/analytics/react";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
@@ -386,21 +388,54 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Global cross-navigation feedback. Route loaders can take a visible amount
+ * of time (backend cold starts, DB round-trips) with nothing else on screen
+ * indicating a click registered — this thin top bar is the fix, independent
+ * of how long any individual navigation ends up taking.
+ */
+function NavigationProgressBar() {
+  const navigation = useNavigation();
+  const isNavigating = navigation.state !== "idle";
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`fixed top-0 left-0 right-0 z-[60] h-[3px] pointer-events-none transition-opacity duration-300 ${
+        isNavigating ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <div
+        className={`h-full bg-gradient-to-r from-[#E0B470] via-[#C8A55A] to-[#E0B470] bg-[length:200%_100%] ${
+          isNavigating ? "animate-nav-progress" : ""
+        }`}
+      />
+    </div>
+  );
+}
+
 export default function App() {
   const location = useLocation();
   const isAuthPage = location.pathname.startsWith("/auth");
 
   if (isAuthPage) {
-    return <Outlet />;
+    return (
+      <>
+        <NavigationProgressBar />
+        <Outlet />
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col">
+      <NavigationProgressBar />
       <Header />
       <main className="flex-1">
         <Outlet />
       </main>
       <Footer />
+      <FeedbackWidget />
     </div>
   );
 }

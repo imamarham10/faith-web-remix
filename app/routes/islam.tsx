@@ -162,12 +162,13 @@ export async function loader() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
   const today = new Date().toISOString().split('T')[0];
 
-  const [calendarRes, eventsRes, dailyNameRes, emotionsRes, dailyHadithRes] = await Promise.allSettled([
+  const [calendarRes, eventsRes, dailyNameRes, emotionsRes, dailyHadithRes, quranSearchRes] = await Promise.allSettled([
     fetch(`${API_BASE}/api/v1/islam/calendar/today`),
     fetch(`${API_BASE}/api/v1/islam/calendar/events/upcoming?days=90`),
     fetch(`${API_BASE}/api/v1/islam/names/daily`),
     fetch(`${API_BASE}/api/v1/islam/feelings`),
     fetch(`${API_BASE}/api/v1/islam/hadiths/daily`),
+    fetch(`${API_BASE}/api/v1/islam/quran/search?q=allah`),
   ]);
 
   // Calendar today — extract hijri date info
@@ -229,12 +230,12 @@ export async function loader() {
     } catch {}
   }
 
-  // Daily inspiration (deterministic by date — move to SSR to eliminate client-side API call)
+  // Daily inspiration (deterministic by date — SSR, and now part of the same
+  // parallel batch above instead of a serial fetch tacked on afterward)
   let dailyInspiration: { text: string; source: string; arabic?: string; translation?: string } | null = null;
   try {
-    const searchRes = await fetch(`${API_BASE}/api/v1/islam/quran/search?q=allah`);
-    if (searchRes.ok) {
-      const json = await searchRes.json();
+    if (quranSearchRes.status === "fulfilled" && quranSearchRes.value.ok) {
+      const json = await quranSearchRes.value.json();
       const results = json.data || json;
       if (Array.isArray(results) && results.length > 0) {
         const d = new Date();
