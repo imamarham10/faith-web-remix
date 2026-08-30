@@ -145,6 +145,13 @@ export default function LoginPage() {
             Welcome back. Enter your credentials to continue.
           </p>
 
+          {searchParams.get("reset") === "success" && (
+            <div className="bg-green-500/8 border border-green-500/15 text-green-600 text-sm px-4 py-3 rounded-xl mb-6 flex items-start gap-2">
+              <span className="shrink-0 mt-0.5">✓</span>
+              <span>Password reset — sign in with your new password.</span>
+            </div>
+          )}
+
           {error && (
             <div className="bg-error/8 border border-error/15 text-error text-sm px-4 py-3 rounded-xl mb-6 flex items-start gap-2">
               <span className="shrink-0 mt-0.5">!</span>
@@ -173,7 +180,12 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-text mb-1.5 block">Password</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-text block">Password</label>
+                  <Link to={`/auth/forgot-password${faithSearch}`} className={`text-xs ${linkClass}`}>
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock
                     size={16}
