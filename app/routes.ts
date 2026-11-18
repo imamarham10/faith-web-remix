@@ -14,6 +14,9 @@ export default [
   route("sitemap-hindu-misc.xml", "routes/sitemap-hindu-misc[.]xml.ts"),
   route("about", "routes/about.tsx"),
   route("privacy", "routes/privacy.tsx"),
+  // Dhruva is its own app with its own store listing, so it needs its
+  // own policy — /privacy above is Siraat's.
+  route("dhruva/privacy", "routes/dhruva.privacy.tsx"),
   route("terms", "routes/terms.tsx"),
   route("contact", "routes/contact.tsx"),
   index("routes/home.tsx"),
