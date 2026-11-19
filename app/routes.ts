@@ -17,6 +17,8 @@ export default [
   // Dhruva is its own app with its own store listing, so it needs its
   // own policy — /privacy above is Siraat's.
   route("dhruva/privacy", "routes/dhruva.privacy.tsx"),
+  // Play wants a deletion URL that works without installing the app.
+  route("dhruva/delete-account", "routes/dhruva.delete-account.tsx"),
   route("terms", "routes/terms.tsx"),
   route("contact", "routes/contact.tsx"),
   index("routes/home.tsx"),

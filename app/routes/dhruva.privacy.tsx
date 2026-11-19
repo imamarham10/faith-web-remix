@@ -143,8 +143,13 @@ export default function DhruvaPrivacyPage() {
               support@siraat.website
             </a>{" "}
             from your registered email address and we will delete your account
-            and the jap history attached to it within 30 days. Anything held
-            only on your phone is removed by uninstalling the app.
+            and the jap history attached to it within 30 days. You can also
+            delete it yourself from the profile screen in the app — see{" "}
+            <a className="underline" href="/dhruva/delete-account">
+              how to delete your account
+            </a>
+            . Anything held only on your phone is removed by uninstalling the
+            app.
           </p>
         </Section>
 
